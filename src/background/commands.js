@@ -7,7 +7,15 @@ import { safeHref } from '../lib/url-safe.js';
 import { openDashboard } from './message-router.js';
 import { log } from '../lib/logger.js';
 
-export async function handleCommand(command) {
+export async function handleCommand(command, tab) {
+  // Handle side-panel opening FIRST, synchronously: chrome.sidePanel.open() must
+  // run inside the command's user-gesture window, which is lost across any await.
+  if (command === 'toggle-side-panel') {
+    try {
+      if (chrome.sidePanel && tab?.windowId != null) chrome.sidePanel.open({ windowId: tab.windowId });
+    } catch (e) { log.warn(e); }
+    return;
+  }
   try {
     await store.init();
     switch (command) {
@@ -37,14 +45,6 @@ export async function handleCommand(command) {
         await flashBadge(String(created.length));
         break;
       }
-      case 'toggle-side-panel': {
-        // Best-effort: open the side panel for the current window.
-        const active = await tabs.getActiveTab();
-        if (chrome.sidePanel && active?.windowId != null) {
-          try { await chrome.sidePanel.open({ windowId: active.windowId }); } catch (e) { log.warn(e); }
-        }
-        break;
-      }
       default:
         log.warn('unknown command', command);
     }
@@ -63,7 +63,9 @@ async function flashBadge(text) {
   try {
     await chrome.action.setBadgeBackgroundColor({ color: '#EB5757' });
     await chrome.action.setBadgeText({ text: String(text).slice(0, 4) });
-    // clear shortly after via alarms (setTimeout is unreliable in MV3 workers)
-    chrome.alarms.create('clear-badge', { when: Date.now() + 1500 });
+    // A ~1.5s flash: the worker is alive right after handling the command, so a
+    // short setTimeout is reliable here. (chrome.alarms clamps to a ~30s floor
+    // in packed builds, so it can't express a sub-30s delay.)
+    setTimeout(() => { chrome.action.setBadgeText({ text: '' }).catch(() => {}); }, 1500);
   } catch { /* action badge unavailable */ }
 }

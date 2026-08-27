@@ -1,0 +1,4 @@
+/* Side panel styles (external so the strict CSP style-src 'self' allows them). */
+body { background: var(--bg-panel); }
+.region-tabs { height: 100vh; display: flex; flex-direction: column; overflow-y: auto; }
+.sp-open { margin: var(--sp-2) var(--sp-3); }

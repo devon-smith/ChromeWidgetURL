@@ -46,6 +46,7 @@ async function boot() {
 
   $('save-tab').addEventListener('click', async () => {
     const collectionId = await resolveTarget();
+    if (collectionId == null) return; // user cancelled the "New collection…" prompt
     try { await send(MessageTypes.SAVE_CURRENT_TAB, { collectionId }); window.close(); }
     catch (e) { flash(e.message); }
   });

@@ -50,10 +50,12 @@ export function attachCollectionDropZone(collectionEl, bodyEl, collectionId) {
   };
   const leave = (e) => { if (!collectionEl.contains(e.relatedTarget)) collectionEl.classList.remove('drop-target-header'); };
   const drop = async (e) => {
-    if (!dragState) return;
+    // Only handle card/tab drops here. Collection-header drags must bubble up to
+    // attachCollectionsContainer with dragState intact.
+    if (!dragState || (dragState.kind !== 'item' && dragState.kind !== 'tab')) return;
     e.preventDefault();
     collectionEl.classList.remove('drop-target-header');
-    const index = computeDropIndex(bodyEl, e.clientX, e.clientY);
+    const index = resolveDropIndex(bodyEl, e.clientX, e.clientY, collectionId);
     const s = dragState; dragState = null;
     try {
       if (s.kind === 'item') {
@@ -134,6 +136,25 @@ export function attachSpaceDropTarget(spaceEl, spaceId) {
 }
 
 /* ----------------------------- utils ----------------------------- */
+
+// Map a drop position to an index in the collection's REAL itemOrder. When a
+// search/tag filter is active only a subset of cards is rendered, so the visual
+// slot is translated via the anchor card's id to the real position (otherwise a
+// drop would land relative to the filtered subset, not the full list).
+function resolveDropIndex(bodyEl, clientX, clientY, collectionId) {
+  const visualIndex = computeDropIndex(bodyEl, clientX, clientY);
+  const filtering = app && (app.search || (app.tagFilter && app.tagFilter.ids.size));
+  if (!filtering) return visualIndex;
+  const col = app.findCollection?.(collectionId);
+  if (!col) return visualIndex;
+  const realOrder = col.items.map((i) => i.id);
+  const cards = [...bodyEl.querySelectorAll('.card')].filter((c) => !c.classList.contains('dragging'));
+  if (visualIndex >= cards.length) return realOrder.length; // append
+  const anchorId = cards[visualIndex]?.dataset.itemId;
+  const ri = realOrder.indexOf(anchorId);
+  return ri >= 0 ? ri : realOrder.length;
+}
+
 function computeDropIndex(bodyEl, clientX, clientY) {
   const cards = [...bodyEl.querySelectorAll('.card')].filter((c) => !c.classList.contains('dragging'));
   for (let i = 0; i < cards.length; i++) {

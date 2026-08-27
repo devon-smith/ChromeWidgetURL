@@ -463,11 +463,17 @@ export async function addItemsFromTabs(collectionId, tabs, { force = false } = {
         pinned: !!tab.pinned,
       });
       c.items[item.id] = item;
-      if (settings.newItemPosition === 'top') c.itemOrder.unshift(item.id);
-      else c.itemOrder.push(item.id);
       created.push(item);
     }
-    if (created.length) { c.updatedAt = now(); bumpRev(c); await _setMany({ [KEYS.collection(collectionId)]: c }); }
+    if (created.length) {
+      // Insert the whole batch as one ordered block so intra-batch (window)
+      // order is preserved even under newItemPosition:'top'.
+      const ids = created.map((i) => i.id);
+      if (settings.newItemPosition === 'top') c.itemOrder = [...ids, ...c.itemOrder];
+      else c.itemOrder.push(...ids);
+      c.updatedAt = now(); bumpRev(c);
+      await _setMany({ [KEYS.collection(collectionId)]: c });
+    }
     return created;
   });
 }
@@ -737,6 +743,8 @@ export async function importJSON(parsed, { mode = 'merge' } = {}) {
     for (const s of parsed.spaces) {
       if (!s || typeof s.name !== 'string') { report.skipped++; continue; }
       const space = makeSpace({ name: s.name, icon: s.icon ?? null, color: s.color ?? null, isFavorite: !!s.isFavorite });
+      if (typeof s.createdAt === 'number') space.createdAt = s.createdAt;
+      if (typeof s.updatedAt === 'number') space.updatedAt = s.updatedAt;
       incoming.spaces[space.id] = space;
       spaceOrder.push(space.id);
       for (const c of (s.collections || [])) {
@@ -744,6 +752,8 @@ export async function importJSON(parsed, { mode = 'merge' } = {}) {
         const col = makeCollection({ spaceId: space.id, name: c.name, color: c.color ?? null, note: c.note ?? null });
         col.isCollapsed = !!c.isCollapsed;
         col.tagIds = remapTagList(c.tagIds, tagIdMap);
+        if (typeof c.createdAt === 'number') col.createdAt = c.createdAt;
+        if (typeof c.updatedAt === 'number') col.updatedAt = c.updatedAt;
         for (const raw of (c.items || [])) {
           if (!raw || typeof raw.url !== 'string') { report.skipped++; continue; }
           if (typeof raw.title === 'string' && raw.title.length > 8192) { report.skipped++; continue; }
@@ -752,6 +762,9 @@ export async function importJSON(parsed, { mode = 'merge' } = {}) {
             url: raw.url, title: raw.title, faviconUrl: raw.faviconUrl ?? null,
             note: raw.note ?? null, tagIds: remapTagList(raw.tagIds, tagIdMap), pinned: !!raw.pinned,
           });
+          if (typeof raw.createdAt === 'number') item.createdAt = raw.createdAt;
+          if (typeof raw.updatedAt === 'number') item.updatedAt = raw.updatedAt;
+          if (typeof raw.lastOpenedAt === 'number') item.lastOpenedAt = raw.lastOpenedAt;
           col.items[item.id] = item; col.itemOrder.push(item.id);
         }
         incoming.collections[col.id] = col;
@@ -849,6 +862,40 @@ export async function insertItem(collectionId, item, index = -1) {
     c.updatedAt = now(); bumpRev(c);
     await _setMany({ [KEYS.collection(collectionId)]: c });
     return item;
+  });
+}
+
+/**
+ * Re-create a previously-deleted space (preserving its id) together with all of
+ * its collections/items, and restore its position in meta.spaceOrder. `space`
+ * is the hydrated form (collections as array, each with items as array) from
+ * getState. Used for an exact deleteSpace undo.
+ */
+export async function reinsertSpace(space, index = -1) {
+  return _withLock(async () => {
+    const meta = await _get(KEYS.META);
+    const writes = {};
+    const collectionOrder = [];
+    for (const c of (space.collections || [])) {
+      const itemsMap = {};
+      let itemOrder = [];
+      if (Array.isArray(c.items)) { itemOrder = c.items.map((i) => i.id); for (const it of c.items) itemsMap[it.id] = it; }
+      else { Object.assign(itemsMap, c.items || {}); itemOrder = (c.itemOrder || Object.keys(itemsMap)).slice(); }
+      const col = { ...c, items: itemsMap, itemOrder, spaceId: space.id, updatedAt: now() };
+      writes[KEYS.collection(col.id)] = col;
+      collectionOrder.push(col.id);
+    }
+    const sp = { ...space, collectionOrder, updatedAt: now() };
+    delete sp.collections;
+    writes[KEYS.space(space.id)] = sp;
+    meta.spaceOrder = (meta.spaceOrder || []).filter((id) => id !== space.id);
+    const idx = index < 0 || index > meta.spaceOrder.length ? meta.spaceOrder.length : index;
+    meta.spaceOrder.splice(idx, 0, space.id);
+    if (!meta.activeSpaceId) meta.activeSpaceId = space.id;
+    meta.updatedAt = now(); bumpRev(meta);
+    writes[KEYS.META] = meta;
+    await _setMany(writes);
+    return sp;
   });
 }
 

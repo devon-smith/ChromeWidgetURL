@@ -127,22 +127,6 @@ async function deleteSpace(s, app) {
   const snapshot = s; // hydrated space with collections
   await store.deleteSpace(s.id);
   app.toast('Space deleted', {
-    undo: async () => {
-      await store.createSpace({ name: snapshot.name, icon: snapshot.icon, color: snapshot.color, isFavorite: snapshot.isFavorite });
-      // note: undo re-creates the space; its collections are restored below
-      const state = await store.getState();
-      const recreated = state.spaces.find((x) => x.name === snapshot.name);
-      if (recreated) {
-        for (const c of snapshot.collections) await store.reinsertCollection(recreated.id, c);
-        await store.reorderSpaces(fixOrder(state.meta.spaceOrder, recreated.id, index));
-      }
-    },
+    undo: async () => { await store.reinsertSpace(snapshot, index); },
   });
-}
-
-function fixOrder(order, id, index) {
-  const arr = order.filter((x) => x !== id);
-  const i = index < 0 || index > arr.length ? arr.length : index;
-  arr.splice(i, 0, id);
-  return arr;
 }

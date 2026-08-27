@@ -81,14 +81,18 @@ function renderCollection(col, items, app) {
 
 function startRename(titleEl, col) {
   const input = el('input', { class: 'inline-input', value: col.name });
+  let done = false; // guards against the blur that fires when we detach on cancel
   const commit = async () => {
+    if (done) return;
+    done = true;
     const v = input.value.trim();
     input.replaceWith(titleEl);
     if (v && v !== col.name) await store.saveCollection(col.id, { name: v });
   };
+  const cancel = () => { if (done) return; done = true; input.replaceWith(titleEl); };
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); commit(); }
-    else if (e.key === 'Escape') { input.replaceWith(titleEl); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
   });
   input.addEventListener('blur', commit);
   titleEl.replaceWith(input);

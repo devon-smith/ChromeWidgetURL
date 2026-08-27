@@ -48,7 +48,12 @@ async function boot() {
   wireResponsiveToggles();
 
   const scheduleSync = rafCoalesce(async () => { await loadState(); render(); openTabsCtl?.refresh(); });
-  store.subscribe(() => scheduleSync());
+  // Skip re-render on non-structural writes (e.g. touchItemOpened bumps no rev),
+  // so opening a link doesn't rebuild the whole dashboard.
+  store.subscribe(({ changes }) => {
+    const structural = Object.values(changes).some((c) => (c.newValue?.rev) !== (c.oldValue?.rev));
+    if (structural) scheduleSync();
+  });
 }
 
 async function loadState() {

@@ -43,13 +43,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 chrome.commands.onCommand.addListener(handleCommand);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
-// ---- badge alarm --------------------------------------------------------
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'clear-badge') {
-    chrome.action.setBadgeText({ text: '' }).catch(() => {});
-  }
-});
-
 // ---- keep the recent-collections submenu fresh --------------------------
 // Rebuild menus when spaces/collections change (debounced; storage.onChanged
 // fires in the worker too). Registered at top level so it survives wakeups.
@@ -65,7 +58,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 // Let clicking the toolbar icon still open the popup; the side panel is opened
 // explicitly via the command / dashboard. Enable open-on-action is optional.
 try {
-  chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false });
-} catch { /* older Chrome */ }
+  chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false })?.catch(() => {});
+} catch { /* older Chrome (setPanelBehavior absent) */ }
 
 log.info('service worker loaded');
