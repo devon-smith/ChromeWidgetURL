@@ -1,0 +1,66 @@
+/* Three-region grid, regions, resizers, responsive behavior. */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--tabs-w);
+  grid-template-rows: 100vh;
+  height: 100vh;
+  overflow: hidden; /* only inner regions scroll */
+}
+.app-shell.sidebar-collapsed { grid-template-columns: var(--sidebar-rail-w) minmax(0, 1fr) var(--tabs-w); }
+.app-shell.tabs-hidden { grid-template-columns: var(--sidebar-w) minmax(0, 1fr) 0; }
+.app-shell.sidebar-collapsed.tabs-hidden { grid-template-columns: var(--sidebar-rail-w) minmax(0, 1fr) 0; }
+
+.region-sidebar { grid-column: 1; overflow-y: auto; background: var(--bg-sidebar); border-right: 1px solid var(--divider); display: flex; flex-direction: column; }
+.region-center  { grid-column: 2; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.region-tabs    { grid-column: 3; overflow-y: auto; background: var(--bg-panel); border-left: 1px solid var(--divider); display: flex; flex-direction: column; }
+.app-shell.tabs-hidden .region-tabs { display: none; }
+
+/* Reopen strip shown when the panel is hidden */
+.tabs-reopen {
+  position: fixed; top: 50%; right: 0; transform: translateY(-50%) rotate(180deg);
+  writing-mode: vertical-rl; display: none;
+  background: var(--surface); border: 1px solid var(--border); border-right: none;
+  border-radius: var(--r-md) 0 0 var(--r-md); padding: var(--sp-3) var(--sp-1);
+  color: var(--text-2); box-shadow: var(--shadow-sm); z-index: var(--z-sticky);
+}
+.app-shell.tabs-hidden ~ .tabs-reopen { display: block; }
+
+/* Sticky toolbar in center */
+.toolbar {
+  position: sticky; top: 0; z-index: var(--z-sticky);
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: var(--toolbar-h); padding: 0 var(--sp-5);
+  background: var(--bg-app); border-bottom: 1px solid var(--divider);
+}
+.toolbar .toolbar-title { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-right: auto; }
+.toolbar .toolbar-title .count { font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--text-3); margin-left: var(--sp-2); }
+.toolbar .toolbar-actions { display: flex; align-items: center; gap: var(--sp-1); }
+
+.center-scroll { flex: 1; padding: var(--sp-4) var(--sp-5) var(--sp-16); }
+
+/* Responsive: collapse right panel then sidebar */
+@media (max-width: 1199px) {
+  .app-shell { grid-template-columns: var(--sidebar-w) minmax(0, 1fr); }
+  .app-shell .region-tabs {
+    position: fixed; top: 0; right: 0; height: 100vh; width: min(360px, 90vw);
+    z-index: var(--z-drawer); box-shadow: var(--shadow-lg);
+    transform: translateX(100%); transition: transform var(--dur-base) var(--ease-out);
+  }
+  .app-shell.tabs-drawer-open .region-tabs { transform: translateX(0); display: flex; }
+}
+@media (max-width: 899px) {
+  .app-shell { grid-template-columns: var(--sidebar-rail-w) minmax(0, 1fr); }
+}
+@media (max-width: 639px) {
+  .app-shell { grid-template-columns: minmax(0, 1fr); }
+  .region-sidebar {
+    position: fixed; top: 0; left: 0; height: 100vh; width: min(300px, 90vw);
+    z-index: var(--z-drawer); box-shadow: var(--shadow-lg);
+    transform: translateX(-100%); transition: transform var(--dur-base) var(--ease-out);
+  }
+  .app-shell.sidebar-drawer-open .region-sidebar { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .region-tabs, .region-sidebar { transition: none !important; }
+}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>New Tab</title>
+  <style>
+    :root { color-scheme: light dark; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid; place-items: center;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #FBF6F5; color: #2B2A30;
+    }
+    @media (prefers-color-scheme: dark) { body { background: #161418; color: #ECE9EE; } }
+    .box { max-width: 460px; padding: 32px; text-align: center; }
+    h1 { font-size: 1.25rem; margin: 0 0 8px; }
+    p { color: #63616C; line-height: 1.5; }
+    @media (prefers-color-scheme: dark) { p { color: #ABA6B2; } }
+    input {
+      width: 100%; box-sizing: border-box; height: 40px; padding: 0 12px; margin: 12px 0;
+      border: 1px solid #DBD0CD; border-radius: 8px; font: inherit; background: #fff;
+    }
+    button { height: 40px; padding: 0 18px; border: none; border-radius: 8px; background: #EB5757; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="box" id="setup">
+    <h1>One-time setup</h1>
+    <p>Paste your <strong>Local Toby</strong> extension ID (find it on <code>chrome://extensions</code>, under the Local Toby card) so every new tab opens your dashboard.</p>
+    <input id="id-input" placeholder="e.g. hddnkoipeenegfoeaoibdmnaalmgkpip" autofocus>
+    <button id="save">Save &amp; use as new tab</button>
+  </div>
+  <script src="newtab.js"></script>
+</body>
+</html>

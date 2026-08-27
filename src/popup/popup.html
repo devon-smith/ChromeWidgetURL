@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Local Toby</title>
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <div class="popup-head">
+      <img class="popup-logo" src="../../icons/icon-48.png" alt="">
+      <div class="popup-title">Local Toby<small>Tab collections · local-first</small></div>
+    </div>
+
+    <div class="popup-stat" id="stat">Reading tabs…</div>
+
+    <div class="popup-target">
+      <label for="target">Save to</label>
+      <select id="target" aria-label="Target collection"></select>
+    </div>
+
+    <div class="popup-actions">
+      <button class="btn btn-primary" id="save-tab">Save this tab</button>
+      <div class="row">
+        <button class="btn" id="save-all">Save all tabs</button>
+        <button class="btn" id="save-close">Save &amp; close all</button>
+      </div>
+      <button class="btn btn-ghost" id="open-dashboard">Open dashboard</button>
+    </div>
+
+    <div class="popup-foot">
+      <span class="hint">Data stays on this device</span>
+      <button class="btn btn-ghost" id="settings" title="Settings" aria-label="Settings">⚙</button>
+    </div>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

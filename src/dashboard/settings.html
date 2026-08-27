@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Toby — Settings</title>
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <style>
+    .settings-wrap { max-width: 680px; margin: 0 auto; padding: var(--sp-8) var(--sp-6) var(--sp-16); }
+    .settings-wrap h1 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-bottom: var(--sp-2); }
+    .settings-wrap .sub { color: var(--text-2); margin-bottom: var(--sp-6); }
+    .card-sec { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-4); box-shadow: var(--shadow-xs); }
+    .card-sec h2 { font-size: var(--fs-lg); font-weight: var(--fw-semibold); margin-bottom: var(--sp-3); }
+    .setting { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-2) 0; border-top: 1px solid var(--divider); }
+    .setting:first-of-type { border-top: none; }
+    .setting .label { display: flex; flex-direction: column; }
+    .setting .label small { color: var(--text-3); font-size: var(--fs-xs); }
+    .setting select, .setting input[type="number"] { height: 34px; padding: 0 var(--sp-2); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface); color: var(--text); }
+    .setting input[type="number"] { width: 80px; }
+    .switch { position: relative; width: 40px; height: 22px; }
+    .switch input { position: absolute; opacity: 0; }
+    .switch .track { position: absolute; inset: 0; background: var(--surface-3); border-radius: var(--r-pill); transition: background var(--dur-fast); }
+    .switch .thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--surface); border-radius: 50%; box-shadow: var(--shadow-sm); transition: transform var(--dur-fast); }
+    .switch input:checked ~ .track { background: var(--accent); }
+    .switch input:checked ~ .thumb { transform: translateX(18px); }
+    .switch input:focus-visible ~ .track { box-shadow: var(--shadow-focus); }
+    .data-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+    .usage { font-size: var(--fs-sm); color: var(--text-2); margin-top: var(--sp-2); }
+    .back-link { display: inline-flex; margin-bottom: var(--sp-4); color: var(--text-2); }
+    .danger-zone { border-color: var(--danger-soft); }
+  </style>
+</head>
+<body>
+  <div class="settings-wrap">
+    <a class="btn btn-ghost back-link" id="back">← Back to dashboard</a>
+    <h1>Settings</h1>
+    <p class="sub">Everything is stored locally on this device. Export a backup regularly.</p>
+
+    <div class="card-sec">
+      <h2>Appearance</h2>
+      <div class="setting">
+        <span class="label">Theme <small>Follows your OS unless overridden</small></span>
+        <select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+      </div>
+      <div class="setting">
+        <span class="label">Default view</span>
+        <select id="defaultView"><option value="grid">Grid</option><option value="list">List</option></select>
+      </div>
+    </div>
+
+    <div class="card-sec">
+      <h2>Behavior</h2>
+      <div class="setting">
+        <span class="label">Open collections in <small>When restoring a whole collection</small></span>
+        <select id="defaultOpenBehavior"><option value="newWindow">A new window</option><option value="currentWindow">The current window</option></select>
+      </div>
+      <div class="setting">
+        <span class="label">New tabs land at <small>Where a saved tab is added</small></span>
+        <select id="newItemPosition"><option value="top">Top of the collection</option><option value="bottom">Bottom of the collection</option></select>
+      </div>
+      <div class="setting">
+        <span class="label">Confirm before opening <input type="number" id="largeOpenThreshold" min="1" max="100"> or more tabs</span>
+      </div>
+      <div class="setting"><span class="label">Skip duplicate URLs when saving</span><label class="switch"><input type="checkbox" id="dedupeOnSave"><span class="track"></span><span class="thumb"></span></label></div>
+      <div class="setting"><span class="label">Enable drag &amp; drop</span><label class="switch"><input type="checkbox" id="dndEnabled"><span class="track"></span><span class="thumb"></span></label></div>
+      <div class="setting"><span class="label">Confirm before deleting</span><label class="switch"><input type="checkbox" id="confirmOnDelete"><span class="track"></span><span class="thumb"></span></label></div>
+      <div class="setting"><span class="label">Warn when closing an unsaved tab</span><label class="switch"><input type="checkbox" id="closeUnsavedWarning"><span class="track"></span><span class="thumb"></span></label></div>
+    </div>
+
+    <div class="card-sec">
+      <h2>Backup &amp; data</h2>
+      <div class="data-actions">
+        <button class="btn btn-primary" id="export">Export JSON backup</button>
+        <button class="btn" id="import-merge">Import (merge)</button>
+        <button class="btn" id="import-replace">Import (replace)</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <p class="usage" id="usage">Storage: …</p>
+      <p class="usage" id="last-export"></p>
+    </div>
+
+    <div class="card-sec">
+      <h2>New tab page</h2>
+      <p class="usage">Local Toby does <b>not</b> take over your new tab page by default. To make it your new tab, install the tiny optional companion in <code>companion-newtab/</code> (see the README) — you can toggle it on/off any time from <code>chrome://extensions</code>.</p>
+    </div>
+
+    <div class="card-sec danger-zone">
+      <h2>Danger zone</h2>
+      <p class="usage">Permanently delete all spaces, collections, and saved tabs on this device. Export a backup first.</p>
+      <div class="data-actions"><button class="btn btn-danger" id="wipe">Delete all data…</button></div>
+    </div>
+  </div>
+  <script type="module" src="settings.js"></script>
+</body>
+</html>

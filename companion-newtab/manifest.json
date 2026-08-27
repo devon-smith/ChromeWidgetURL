@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Local Toby — New Tab",
+  "version": "0.1.0",
+  "description": "Optional companion: makes Local Toby your new tab page. Enable or disable it any time from chrome://extensions.",
+  "minimum_chrome_version": "116",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}

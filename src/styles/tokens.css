@@ -1,0 +1,143 @@
+/* ============================================================
+   Design tokens. Light is the base on :root; dark overrides in
+   the two blocks below. Manual toggle sets <html data-theme>.
+   ============================================================ */
+:root {
+  /* ---------- Brand / Accent (coral) ---------- */
+  --accent:            #EB5757;
+  --accent-hover:      #E24444;
+  --accent-active:     #C93636;
+  --accent-soft:       #FDEBEB;
+  --accent-soft-hover: #FBDDDD;
+  --accent-ring:       #F3A3A3;
+  --on-accent:         #FFFFFF;
+
+  /* ---------- Surfaces / Backgrounds ---------- */
+  --bg-app:        #FBF6F5;
+  --bg-sidebar:    #F5EEEC;
+  --bg-panel:      #FAF4F3;
+  --surface:       #FFFFFF;
+  --surface-2:     #F7F1F0;
+  --surface-3:     #F0E9E7;
+  --overlay-scrim: rgba(30, 22, 22, 0.44);
+
+  /* ---------- Text ---------- */
+  --text:      #2B2A30;
+  --text-2:    #63616C;
+  --text-3:    #97949F;
+  --text-inv:  #FFFFFF;
+  --text-link: #C93636;
+
+  /* ---------- Borders / Dividers ---------- */
+  --border:        #ECE3E1;
+  --border-strong: #DBD0CD;
+  --border-focus:  var(--accent);
+  --divider:       #F0E7E5;
+
+  /* ---------- Feedback ---------- */
+  --success: #2E9E6B;  --success-soft: #E4F4EC;
+  --warning: #C9871F;  --warning-soft: #FBF0DC;
+  --danger:  #D14343;  --danger-soft:  #FBE7E7;
+  --info:    #3B7FD1;  --info-soft:    #E6F0FB;
+
+  /* ---------- Typography ---------- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
+               "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --fs-2xs: 0.6875rem;  --fs-xs: 0.75rem;  --fs-sm: 0.8125rem;
+  --fs-md:  0.875rem;   --fs-lg: 1rem;     --fs-xl: 1.25rem;  --fs-2xl: 1.5rem;
+
+  --lh-tight: 1.2;  --lh-snug: 1.35;  --lh-base: 1.5;
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+  --tracking-caps: 0.04em;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --sp-0: 0;     --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;
+  --sp-4: 16px;  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+  --sp-10: 40px; --sp-12: 48px; --sp-16: 64px;
+
+  /* ---------- Radius ---------- */
+  --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px; --r-pill: 999px;
+
+  /* ---------- Shadows (warm-tinted) ---------- */
+  --shadow-xs: 0 1px 2px rgba(60, 40, 38, 0.06);
+  --shadow-sm: 0 1px 3px rgba(60, 40, 38, 0.08), 0 1px 2px rgba(60, 40, 38, 0.06);
+  --shadow-md: 0 4px 12px rgba(60, 40, 38, 0.10), 0 2px 4px rgba(60, 40, 38, 0.06);
+  --shadow-lg: 0 12px 32px rgba(50, 30, 28, 0.16), 0 4px 10px rgba(50, 30, 28, 0.08);
+  --shadow-drag: 0 16px 40px rgba(40, 24, 22, 0.28);
+  --shadow-focus: 0 0 0 3px var(--accent-ring);
+
+  /* ---------- Layout dims ---------- */
+  --sidebar-w: 264px;  --sidebar-rail-w: 56px;  --tabs-w: 320px;
+  --toolbar-h: 56px;   --card-w: 220px;         --card-h: 74px;  --favicon: 16px;
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 260ms;
+
+  /* ---------- Z-index ---------- */
+  --z-base: 0; --z-sticky: 100; --z-drawer: 200;
+  --z-dropdown: 300; --z-modal: 400; --z-toast: 500; --z-drag: 600;
+
+  color-scheme: light;
+}
+
+/* Dark applies when OS prefers dark and the user hasn't forced light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #F26C6C; --accent-hover: #F58080; --accent-active: #D95050;
+    --accent-soft: #3A2222; --accent-soft-hover: #472A2A; --accent-ring: #7A3B3B;
+    --on-accent: #1B1416;
+
+    --bg-app: #161418; --bg-sidebar: #1C191E; --bg-panel: #1A171C;
+    --surface: #221F25; --surface-2: #2A262D; --surface-3: #332E36;
+    --overlay-scrim: rgba(0, 0, 0, 0.60);
+
+    --text: #ECE9EE; --text-2: #ABA6B2; --text-3: #78737F;
+    --text-inv: #1B1416; --text-link: #F58080;
+
+    --border: #322D38; --border-strong: #453E4C; --divider: #2A262F;
+
+    --success: #4CB889; --success-soft: #1E3128;
+    --warning: #D8A24A; --warning-soft: #33291A;
+    --danger:  #E56A6A; --danger-soft:  #34211F;
+    --info:    #5E9BE0; --info-soft:    #1D2836;
+
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.40);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.40);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.50), 0 2px 4px rgba(0,0,0,0.40);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.60), 0 4px 10px rgba(0,0,0,0.45);
+    --shadow-drag: 0 16px 40px rgba(0,0,0,0.70);
+    --shadow-focus: 0 0 0 3px var(--accent-ring);
+  }
+}
+
+/* Explicit toggle wins over OS in both directions. */
+:root[data-theme="dark"] {
+  --accent: #F26C6C; --accent-hover: #F58080; --accent-active: #D95050;
+  --accent-soft: #3A2222; --accent-soft-hover: #472A2A; --accent-ring: #7A3B3B;
+  --on-accent: #1B1416;
+  --bg-app: #161418; --bg-sidebar: #1C191E; --bg-panel: #1A171C;
+  --surface: #221F25; --surface-2: #2A262D; --surface-3: #332E36;
+  --overlay-scrim: rgba(0,0,0,0.60);
+  --text: #ECE9EE; --text-2: #ABA6B2; --text-3: #78737F;
+  --text-inv: #1B1416; --text-link: #F58080;
+  --border: #322D38; --border-strong: #453E4C; --divider: #2A262F;
+  --success: #4CB889; --success-soft: #1E3128;
+  --warning: #D8A24A; --warning-soft: #33291A;
+  --danger:  #E56A6A; --danger-soft:  #34211F;
+  --info:    #5E9BE0; --info-soft:    #1D2836;
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.40);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.50), 0 2px 4px rgba(0,0,0,0.40);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.60), 0 4px 10px rgba(0,0,0,0.45);
+  --shadow-drag: 0 16px 40px rgba(0,0,0,0.70);
+  --shadow-focus: 0 0 0 3px var(--accent-ring);
+}
