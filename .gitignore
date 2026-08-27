@@ -1,0 +1,17 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node (only used for the icon generator / optional tooling — the extension itself has no build step)
+node_modules/
+npm-debug.log*
+
+# Packaged extension
+*.zip
+web-ext-artifacts/
+
+# Local scratch
+scratch/
