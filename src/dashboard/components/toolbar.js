@@ -15,14 +15,14 @@ export function renderToolbar(container, app) {
     }),
     toggleBtn('tag', 'Tag filter', app.showTagFilter, () => app.toggleTagFilter()),
     toggleBtn('external', 'Drag & drop', app.settings.dndEnabled, () => store.updateSettings({ dndEnabled: !app.settings.dndEnabled })),
-    el('button', { class: 'btn btn-ghost', title: 'Collapse all', on: { click: () => app.setAllCollapsed(true) } }, [icon('chevron'), 'Collapse']),
-    el('button', { class: 'btn btn-ghost', title: 'Expand all', on: { click: () => app.setAllCollapsed(false) } }, [icon('chevronDown'), 'Expand']),
-    el('button', { class: 'btn btn-primary', on: { click: () => app.addCollection() } }, [icon('plus'), 'Add Collection']),
+    el('button', { class: 'btn btn-ghost', title: 'Collapse all', on: { click: () => app.setAllCollapsed(true) } }, [icon('chevron'), lbl('Collapse')]),
+    el('button', { class: 'btn btn-ghost', title: 'Expand all', on: { click: () => app.setAllCollapsed(false) } }, [icon('chevronDown'), lbl('Expand')]),
+    el('button', { class: 'btn btn-primary', title: 'Add collection', on: { click: () => app.addCollection() } }, [icon('plus'), lbl('Add Collection')]),
   ]);
 
   container.append(el('div', { class: 'toolbar' }, [
     el('h1', { class: 'toolbar-title' }, [
-      space ? space.name : 'My Collections',
+      el('span', { class: 'tt-name', text: space ? space.name : 'My Collections', attrs: { title: space ? space.name : 'My Collections' } }),
       el('span', { class: 'count', text: `${collectionCount} collection${collectionCount === 1 ? '' : 's'}` }),
     ]),
     actions,
@@ -31,11 +31,13 @@ export function renderToolbar(container, app) {
   if (app.showTagFilter) container.append(renderTagFilter(app));
 }
 
+function lbl(text) { return el('span', { class: 'btn-label', text }); }
+
 function toggleBtn(iconName, label, active, onClick) {
   return el('button', {
     class: 'btn btn-ghost', attrs: { 'aria-pressed': String(!!active), title: label },
     on: { click: onClick },
-  }, [icon(iconName), label]);
+  }, [icon(iconName), lbl(label)]);
 }
 
 function renderTagFilter(app) {

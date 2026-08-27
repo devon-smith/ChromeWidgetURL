@@ -12,7 +12,7 @@
 .app-shell.sidebar-collapsed.tabs-hidden { grid-template-columns: var(--sidebar-rail-w) minmax(0, 1fr) 0; }
 
 .region-sidebar { grid-column: 1; overflow-y: auto; background: var(--bg-sidebar); border-right: 1px solid var(--divider); display: flex; flex-direction: column; }
-.region-center  { grid-column: 2; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.region-center  { grid-column: 2; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; container: toby-center / inline-size; }
 .region-tabs    { grid-column: 3; overflow-y: auto; background: var(--bg-panel); border-left: 1px solid var(--divider); display: flex; flex-direction: column; }
 .app-shell.tabs-hidden .region-tabs { display: none; }
 
@@ -30,12 +30,34 @@
 .toolbar {
   position: sticky; top: 0; z-index: var(--z-sticky);
   display: flex; align-items: center; gap: var(--sp-2);
-  height: var(--toolbar-h); padding: 0 var(--sp-5);
+  height: var(--toolbar-h); min-height: var(--toolbar-h); padding: 0 var(--sp-5);
   background: var(--bg-app); border-bottom: 1px solid var(--divider);
 }
-.toolbar .toolbar-title { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-right: auto; }
-.toolbar .toolbar-title .count { font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--text-3); margin-left: var(--sp-2); }
-.toolbar .toolbar-actions { display: flex; align-items: center; gap: var(--sp-1); }
+.toolbar .toolbar-title {
+  flex: 1 1 auto; min-width: 0; margin-right: var(--sp-2);
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-size: var(--fs-2xl); font-weight: var(--fw-bold); line-height: var(--lh-tight);
+}
+.toolbar .toolbar-title .tt-name {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.toolbar .toolbar-title .count {
+  flex: none; white-space: nowrap;
+  font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--text-3);
+}
+.toolbar .toolbar-actions { flex: none; display: flex; align-items: center; gap: var(--sp-1); }
+
+/* Compact the toolbar as the center pane narrows (works in split-screen / side
+   panel widths, not just small viewports). Labels collapse to icon-only. */
+@container toby-center (max-width: 780px) {
+  .toolbar { padding: 0 var(--sp-3); gap: var(--sp-1); }
+  .toolbar .toolbar-actions .btn-label { display: none; }
+  .toolbar .toolbar-actions .btn { padding: 0 var(--sp-2); gap: 0; }
+}
+@container toby-center (max-width: 520px) {
+  .toolbar .toolbar-title { font-size: var(--fs-xl); }
+  .toolbar .toolbar-title .count { display: none; }
+}
 
 .center-scroll { flex: 1; padding: var(--sp-4) var(--sp-5) var(--sp-16); }
 

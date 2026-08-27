@@ -157,7 +157,6 @@ Start now with §1 setup, then run §2 through §14, then §15 cleanup.
 ## Known gaps to expect (not failures)
 
 - **Tags / Tag filter:** the storage layer supports tags, but there is **no UI yet** to create or assign a tag to a card, so the "Tag filter" toolbar shows "no tags yet". Tag assignment is a planned follow-up — don't file it as a bug.
-- **Responsive toolbar:** at narrow widths the space title can wrap and the "Add Collection" label can clip. Cosmetic; a polish item.
 
 ## Automated smoke test (no browser)
 
