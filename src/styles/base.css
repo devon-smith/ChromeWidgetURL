@@ -15,6 +15,7 @@ h1, h2, h3, h4, p { margin: 0; }
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; }
 input, textarea, select { font: inherit; color: inherit; }
 a { color: var(--text-link); text-decoration: none; }
+mark { background: var(--accent-soft-hover); color: inherit; border-radius: 3px; padding: 0 1px; }
 ul { list-style: none; margin: 0; padding: 0; }
 img { display: block; }
 

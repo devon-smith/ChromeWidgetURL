@@ -45,7 +45,10 @@ export function mountOpenTabs(container, app) {
         icon('window', { size: 14 }),
         el('span', { text: isThis ? 'This window' : `Window ${wi}` }),
         el('span', { class: 'win-count', text: `· ${w.tabs.length} tab${w.tabs.length === 1 ? '' : 's'}` }),
-        el('button', { class: 'btn btn-ghost win-save', text: 'Save all', on: { click: () => app.saveWindow(w.windowId) } }),
+        el('div', { class: 'win-actions' }, [
+          el('button', { class: 'btn btn-ghost win-save', text: 'Save all', on: { click: () => app.saveWindow(w.windowId) } }),
+          el('button', { class: 'btn btn-ghost win-save', text: '& close', title: 'Save all tabs then close them', on: { click: () => app.saveWindowAndClose(w.windowId) } }),
+        ]),
       ]));
       for (const t of w.tabs) group.append(tabRow(t, savedMap, dupCounts, app));
       scroll.append(group);

@@ -29,10 +29,11 @@ export function renderCard(item, collectionId, app) {
 
   const handle = el('span', { class: 'card-handle', attrs: { 'aria-hidden': 'true' } }, [icon('dots')]);
 
-  const body = el('div', { class: 'card-body' }, [
-    el('span', { class: 'card-title clamp-2', text: item.title || item.domain || item.url }),
-    el('span', { class: 'card-source clamp-1', text: item.sourceLabel || item.domain || '' }),
-  ]);
+  const titleSpan = el('span', { class: 'card-title clamp-2' });
+  appendHighlighted(titleSpan, item.title || item.domain || item.url, app.search);
+  const sourceSpan = el('span', { class: 'card-source clamp-1' });
+  appendHighlighted(sourceSpan, item.sourceLabel || item.domain || '', app.search);
+  const body = el('div', { class: 'card-body' }, [titleSpan, sourceSpan]);
   if (item.note) body.append(el('span', { class: 'card-note clamp-2', text: item.note }));
 
   // tags
@@ -65,6 +66,23 @@ export function renderCard(item, collectionId, app) {
   });
 
   return card;
+}
+
+// Append `text` to `parent` as text nodes, wrapping case-insensitive matches of
+// `query` in <mark>. Untrusted-safe: only textContent + createElement, no HTML.
+function appendHighlighted(parent, text, query) {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) { parent.append(document.createTextNode(text)); return; }
+  const lower = text.toLowerCase();
+  let i = 0, idx;
+  while ((idx = lower.indexOf(q, i)) !== -1) {
+    if (idx > i) parent.append(document.createTextNode(text.slice(i, idx)));
+    const mark = document.createElement('mark');
+    mark.textContent = text.slice(idx, idx + q.length);
+    parent.append(mark);
+    i = idx + q.length;
+  }
+  if (i < text.length) parent.append(document.createTextNode(text.slice(i)));
 }
 
 async function copyUrl(item, app) {

@@ -77,8 +77,14 @@ async function handleSaveAllTabs(payload) {
   const skippedRestricted = winTabs.filter((t) => !safeHref(t.url)).length;
   if (closeAfter && created.length) {
     const savedNorms = new Set(created.map((i) => i.url));
-    const toClose = winTabs.filter((t) => safeHref(t.url) && savedNorms.has(t.url)).map((t) => t.id);
-    closed = await tabs.closeTabs(toClose);
+    const closable = winTabs.filter((t) => safeHref(t.url) && savedNorms.has(t.url));
+    const closedUrls = closable.map((t) => t.url);
+    // Keep the window alive if this would close every tab in it.
+    closed = await tabs.closeTabsKeepWindowsAlive(closable.map((t) => t.id));
+    // Hand an undo to any open dashboard (the popup that triggered this is gone).
+    if (closed) {
+      await store.setPendingUndo({ kind: 'saveClose', urls: closedUrls, collectionId: col.id, createdAt: Date.now() });
+    }
   }
   return { collectionId: col.id, savedCount: created.length, closed, skippedRestricted };
 }

@@ -83,6 +83,28 @@ export async function closeTabs(tabIds) {
   return ids.length;
 }
 
+/**
+ * Close tabs, but if closing would empty a window, first open a fresh New Tab in
+ * that window so the window (and the browser) stays alive. Used by save-&-close.
+ */
+export async function closeTabsKeepWindowsAlive(tabIds) {
+  const ids = (Array.isArray(tabIds) ? tabIds : [tabIds]).filter((n) => Number.isInteger(n));
+  if (!ids.length) return 0;
+  const closing = new Set(ids);
+  const all = await chrome.tabs.query({});
+  const byWindow = {};
+  for (const t of all) (byWindow[t.windowId] ??= []).push(t.id);
+  const affected = new Set(all.filter((t) => closing.has(t.id)).map((t) => t.windowId));
+  for (const win of affected) {
+    const remaining = (byWindow[win] || []).filter((id) => !closing.has(id));
+    if (remaining.length === 0) {
+      try { await chrome.tabs.create({ windowId: win }); } catch { /* window gone */ }
+    }
+  }
+  await chrome.tabs.remove(ids);
+  return ids.length;
+}
+
 /** Reopen a set of URLs (used by Undo of save-and-close). */
 export async function reopenUrls(urls, { windowId } = {}) {
   const opened = [];

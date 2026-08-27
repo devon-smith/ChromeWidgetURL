@@ -7,6 +7,7 @@
 // Globally gated by settings.dndEnabled.
 
 import * as store from '../../lib/store.js';
+import { normalizeUrl } from '../../lib/url-safe.js';
 
 let dragState = null; // { kind:'item'|'tab'|'collection', ... }
 let app = null;
@@ -59,8 +60,17 @@ export function attachCollectionDropZone(collectionEl, bodyEl, collectionId) {
     const s = dragState; dragState = null;
     try {
       if (s.kind === 'item') {
-        if (s.fromCollectionId === collectionId) await store.moveItem(s.itemId, collectionId, collectionId, index);
-        else await store.moveItem(s.itemId, s.fromCollectionId, collectionId, index);
+        if (s.fromCollectionId === collectionId) {
+          await store.moveItem(s.itemId, collectionId, collectionId, index);
+        } else {
+          // Note (don't block) if the target already holds this URL.
+          const src = app.findCollection?.(s.fromCollectionId);
+          const target = app.findCollection?.(collectionId);
+          const moving = src?.items.find((i) => i.id === s.itemId);
+          const dup = moving && target && target.items.some((i) => normalizeUrl(i.url) === normalizeUrl(moving.url));
+          await store.moveItem(s.itemId, s.fromCollectionId, collectionId, index);
+          if (dup) app.toast('Moved — note: that link is already in this collection');
+        }
       } else if (s.kind === 'tab') {
         const { item, duplicate } = await store.addItem(collectionId, {
           url: s.tab.url, title: s.tab.title, faviconUrl: s.tab.favIconUrl || null,

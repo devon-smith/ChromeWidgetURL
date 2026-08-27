@@ -161,8 +161,9 @@
   font-size: var(--fs-xs); color: var(--text-2); font-weight: var(--fw-semibold);
 }
 .win-header .win-count { color: var(--text-3); font-weight: var(--fw-regular); }
-.win-header .win-save { margin-left: auto; opacity: 0; }
-.win-group:hover .win-header .win-save { opacity: 1; }
+.win-actions { margin-left: auto; display: flex; gap: 2px; opacity: 0; }
+.win-group:hover .win-actions, .win-group:focus-within .win-actions { opacity: 1; }
+.win-actions .win-save { height: 26px; padding: 0 var(--sp-2); font-size: var(--fs-xs); }
 
 .tab-row {
   position: relative; display: flex; align-items: center; gap: var(--sp-2);

@@ -697,6 +697,21 @@ export async function exportJSON() {
   return JSON.stringify(tree, null, 2);
 }
 
+/* ------------------------------------------------------------------ */
+/* Transient cross-context undo (e.g. popup save-&-close → dashboard)   */
+/* ------------------------------------------------------------------ */
+
+/** Stash a one-shot undo record for an open dashboard to surface. */
+export async function setPendingUndo(record) {
+  await area.set({ pendingUndo: record });
+}
+export async function getPendingUndo() {
+  return (await area.get('pendingUndo')).pendingUndo || null;
+}
+export async function clearPendingUndo() {
+  await area.remove('pendingUndo');
+}
+
 /** Record that a backup was just exported (updates meta.lastExportAt). */
 export async function stampExport() {
   return _withLock(async () => {

@@ -54,6 +54,31 @@ async function boot() {
     const structural = Object.values(changes).some((c) => (c.newValue?.rev) !== (c.oldValue?.rev));
     if (structural) scheduleSync();
   });
+
+  // Surface a save-&-close undo triggered elsewhere (e.g. the popup, which closes
+  // before it can show its own toast). The worker stashes it under `pendingUndo`.
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !changes.pendingUndo) return;
+    const rec = changes.pendingUndo.newValue;
+    if (rec) showPendingUndo(rec);
+  });
+  const boot0 = await store.getPendingUndo();
+  if (boot0) showPendingUndo(boot0);
+}
+
+/** Show (and claim) a pending cross-context undo, e.g. save-&-close from the popup. */
+async function showPendingUndo(rec) {
+  if (!rec || rec.kind !== 'saveClose') return;
+  if (Date.now() - (rec.createdAt || 0) > 12000) { store.clearPendingUndo().catch(() => {}); return; }
+  await store.clearPendingUndo().catch(() => {}); // claim it so a second dashboard won't double-show
+  const n = rec.urls?.length || 0;
+  toast(`Saved & closed ${n} tab${n === 1 ? '' : 's'}`, {
+    variant: 'success',
+    undo: async () => {
+      await tabsLib.reopenUrls(rec.urls || []);
+      await store.deleteCollection(rec.collectionId).catch(() => {});
+    },
+  });
 }
 
 async function loadState() {
@@ -180,6 +205,21 @@ app.saveWindow = async (windowId) => {
   const col = await store.createCollection(spaceId, { name: defaultName() });
   const created = await store.addItemsFromTabs(col.id, winTabs);
   toast(`Saved ${created.length} tab${created.length === 1 ? '' : 's'} to new collection`, { variant: 'success' });
+};
+
+app.saveWindowAndClose = async (windowId) => {
+  const winTabs = (await chrome.tabs.query({ windowId })).sort((a, b) => a.index - b.index);
+  const closable = winTabs.filter((t) => safeHref(t.url));
+  if (!closable.length) { toast('No saveable tabs to close', { variant: 'error' }); return; }
+  const spaceId = app.activeSpace?.id;
+  const col = await store.createCollection(spaceId, { name: defaultName() });
+  const created = await store.addItemsFromTabs(col.id, closable);
+  const closedUrls = closable.map((t) => t.url);
+  await tabsLib.closeTabsKeepWindowsAlive(closable.map((t) => t.id));
+  toast(`Saved & closed ${created.length} tab${created.length === 1 ? '' : 's'}`, {
+    variant: 'success',
+    undo: async () => { await tabsLib.reopenUrls(closedUrls, { windowId }); await store.deleteCollection(col.id).catch(() => {}); },
+  });
 };
 
 app.restore = async (collectionId, mode) => {
