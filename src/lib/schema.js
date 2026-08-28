@@ -11,11 +11,17 @@ export const KEYS = {
   META: 'meta',
   TAGS: 'tags',
   SETTINGS: 'settings',
+  DELETIONS: 'deletions',
   spacePrefix: 'space:',
   collectionPrefix: 'collection:',
   space: (id) => `space:${id}`,
   collection: (id) => `collection:${id}`,
 };
+
+/** Tombstone log: id -> { type, deletedAt }. Lets deletions propagate on sync. */
+export function defaultDeletions() {
+  return { rev: 0, byId: {} };
+}
 
 /**
  * @typedef {Object} Item

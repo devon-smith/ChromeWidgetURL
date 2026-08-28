@@ -24,7 +24,13 @@ export const migrations = [
       }
     }
   },
-  // Future: (db) => { /* v1 -> v2 */ },
+  // v1 -> v2 : add the deletions tombstone log (for Drive sync). The runner
+  // seeds `db.deletions` from storage (or a default) before calling this.
+  (db) => {
+    db.meta.schemaVersion = 2;
+    if (!db.deletions || typeof db.deletions !== 'object') db.deletions = { rev: 0, byId: {} };
+    if (!db.deletions.byId) db.deletions.byId = {};
+  },
 ];
 
 /** Current version = number of migrations that have shipped. */

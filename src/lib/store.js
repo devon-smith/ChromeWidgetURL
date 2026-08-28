@@ -10,7 +10,7 @@
 //  - Writes are read-modify-write performed *inside* the lock against a fresh
 //    read, so the stale window is minimal even across contexts.
 
-import { KEYS, defaultSettings, seedMeta, makeSpace, makeCollection, makeItem,
+import { KEYS, defaultSettings, defaultDeletions, seedMeta, makeSpace, makeCollection, makeItem,
   makeTag, now } from './schema.js';
 import { migrations, CURRENT_SCHEMA_VERSION } from './migrations.js';
 import { safeHref, hostnameOf, sourceLabelOf, normalizeUrl } from './url-safe.js';
@@ -145,19 +145,21 @@ function manifestVersion() {
 /* Normalization helpers                                               */
 /* ------------------------------------------------------------------ */
 
-// Raw storage map -> { meta, spaces:{}, collections:{}, tags, settings }
+// Raw storage map -> { meta, spaces:{}, collections:{}, tags, settings, deletions }
 function normalizeRaw(all) {
   const spaces = {}, collections = {};
   let tags = { rev: 0, byId: {} };
   let settings = defaultSettings();
+  let deletions = defaultDeletions();
   let meta = all[KEYS.META] || seedMeta(0);
   for (const [k, v] of Object.entries(all)) {
     if (k.startsWith(KEYS.spacePrefix)) spaces[v.id] = v;
     else if (k.startsWith(KEYS.collectionPrefix)) collections[v.id] = v;
     else if (k === KEYS.TAGS) tags = v;
     else if (k === KEYS.SETTINGS) settings = { ...defaultSettings(), ...v };
+    else if (k === KEYS.DELETIONS) deletions = { rev: 0, byId: {}, ...v };
   }
-  return { meta, spaces, collections, tags, settings };
+  return { meta, spaces, collections, tags, settings, deletions };
 }
 
 // Write a normalized db back out as shards (atomic multi-key set).
@@ -167,9 +169,24 @@ async function writeDenormalized(db) {
     [KEYS.SETTINGS]: db.settings,
     [KEYS.TAGS]: db.tags,
   };
+  if (db.deletions) writes[KEYS.DELETIONS] = db.deletions;
   for (const s of Object.values(db.spaces)) writes[KEYS.space(s.id)] = s;
   for (const c of Object.values(db.collections)) writes[KEYS.collection(c.id)] = c;
   await _setMany(writes);
+}
+
+/** Record tombstones for a set of {id,type} so deletions propagate on sync. */
+async function _recordTombstones(entries) {
+  if (!entries.length) return;
+  const del = (await _get(KEYS.DELETIONS)) || defaultDeletions();
+  const t = now();
+  for (const { id, type } of entries) del.byId[id] = { type, deletedAt: t };
+  del.rev = (del.rev || 0) + 1;
+  await _setMany({ [KEYS.DELETIONS]: del });
+}
+
+export async function getDeletions() {
+  return (await _get(KEYS.DELETIONS)) || defaultDeletions();
 }
 
 function orderedItems(collection) {
@@ -284,12 +301,21 @@ export async function deleteSpace(spaceId) {
     if ((meta.spaceOrder || []).length <= 1) throw new Error('cannot delete the last space');
     const s = await _get(KEYS.space(spaceId));
     if (!s) return;
-    const toRemove = [KEYS.space(spaceId), ...(s.collectionOrder || []).map(KEYS.collection)];
+    const colIds = s.collectionOrder || [];
+    const toRemove = [KEYS.space(spaceId), ...colIds.map(KEYS.collection)];
+    // tombstones for the space, its collections, and all nested items
+    const tombs = [{ id: spaceId, type: 'space' }];
+    for (const cid of colIds) {
+      tombs.push({ id: cid, type: 'collection' });
+      const c = await _get(KEYS.collection(cid));
+      for (const iid of Object.keys(c?.items || {})) tombs.push({ id: iid, type: 'item' });
+    }
     meta.spaceOrder = (meta.spaceOrder || []).filter((id) => id !== spaceId);
     if (meta.activeSpaceId === spaceId) meta.activeSpaceId = meta.spaceOrder[0] || null;
     meta.updatedAt = now(); bumpRev(meta);
     await _removeMany(toRemove);
     await _setMany({ [KEYS.META]: meta });
+    await _recordTombstones(tombs);
   });
 }
 
@@ -355,6 +381,9 @@ export async function deleteCollection(collectionId) {
       await _setMany({ [KEYS.space(s.id)]: s });
     }
     await _removeMany([KEYS.collection(collectionId)]);
+    const tombs = [{ id: collectionId, type: 'collection' }];
+    for (const iid of Object.keys(c.items || {})) tombs.push({ id: iid, type: 'item' });
+    await _recordTombstones(tombs);
   });
 }
 
@@ -505,6 +534,7 @@ export async function deleteItem(collectionId, itemId) {
     c.itemOrder = (c.itemOrder || []).filter((id) => id !== itemId);
     c.updatedAt = now(); bumpRev(c);
     await _setMany({ [KEYS.collection(collectionId)]: c });
+    await _recordTombstones([{ id: itemId, type: 'item' }]);
   });
 }
 
@@ -615,6 +645,7 @@ export async function deleteTag(tagId) {
       if (changed) { bumpRev(v); writes[k] = v; }
     }
     await _setMany(writes);
+    await _recordTombstones([{ id: tagId, type: 'tag' }]);
   });
 }
 
@@ -679,8 +710,11 @@ export async function buildExportTree() {
     schemaVersion: db.meta.schemaVersion ?? CURRENT_SCHEMA_VERSION,
     exportedAt: now(),
     app: { name: 'Local Toby', version: manifestVersion() },
+    // meta carries the ordering authority + timestamp used by sync merge
+    meta: { updatedAt: db.meta.updatedAt || 0, activeSpaceId: db.meta.activeSpaceId || null },
     settings: withoutRev(db.settings),
     tags: Object.values(db.tags.byId || {}),
+    deletions: (db.deletions && db.deletions.byId) ? db.deletions.byId : {},
     spaces,
   };
 }
@@ -719,6 +753,57 @@ export async function stampExport() {
     if (!meta) return;
     meta.lastExportAt = now(); meta.updatedAt = now(); bumpRev(meta);
     await _setMany({ [KEYS.META]: meta });
+  });
+}
+
+// Convert an export tree (buildExportTree shape) into a normalized db,
+// PRESERVING ids/timestamps/order (unlike importJSON, which remints ids).
+function treeToDb(tree) {
+  const meta = seedMeta(tree.schemaVersion ?? CURRENT_SCHEMA_VERSION);
+  meta.updatedAt = tree.meta?.updatedAt || now();
+  meta.activeSpaceId = tree.meta?.activeSpaceId || null;
+  meta.appVersion = manifestVersion();
+  meta.spaceOrder = [];
+  const spaces = {}, collections = {};
+  for (const s of (tree.spaces || [])) {
+    const space = {
+      id: s.id, type: 'space', name: s.name, icon: s.icon ?? null, color: s.color ?? null,
+      isFavorite: !!s.isFavorite, collectionOrder: [], createdAt: s.createdAt || now(), updatedAt: s.updatedAt || now(), rev: 0,
+    };
+    spaces[space.id] = space; meta.spaceOrder.push(space.id);
+    for (const c of (s.collections || [])) {
+      const col = {
+        id: c.id, type: 'collection', spaceId: space.id, name: c.name, color: c.color ?? null, note: c.note ?? null,
+        tagIds: c.tagIds || [], isCollapsed: !!c.isCollapsed, itemOrder: [], items: {},
+        createdAt: c.createdAt || now(), updatedAt: c.updatedAt || now(), rev: 0,
+      };
+      for (const it of (c.items || [])) {
+        col.items[it.id] = { ...it, type: 'item', tagIds: it.tagIds || [] };
+        col.itemOrder.push(it.id);
+      }
+      collections[col.id] = col; space.collectionOrder.push(col.id);
+    }
+  }
+  const tags = { rev: 0, byId: {} };
+  for (const t of (tree.tags || [])) tags.byId[t.id] = { id: t.id, type: 'tag', name: t.name, color: t.color ?? null, createdAt: t.createdAt || now() };
+  const deletions = { rev: 0, byId: { ...(tree.deletions || {}) } };
+  const settings = { ...defaultSettings(), ...(tree.settings || {}) };
+  return { meta, spaces, collections, tags, settings, deletions };
+}
+
+/**
+ * Wholesale-replace the entire store with an export tree (ids/timestamps
+ * preserved). Used by sync after mergeRemote produces the reconciled tree.
+ */
+export async function replaceAll(tree) {
+  return _withLock(async () => {
+    const db = treeToDb(tree);
+    const all = await _getAll();
+    const appKeys = Object.keys(all).filter((k) =>
+      k === KEYS.META || k === KEYS.TAGS || k === KEYS.SETTINGS || k === KEYS.DELETIONS ||
+      k.startsWith(KEYS.spacePrefix) || k.startsWith(KEYS.collectionPrefix));
+    await _removeMany(appKeys);
+    await writeDenormalized(db);
   });
 }
 
