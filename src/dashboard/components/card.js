@@ -7,7 +7,8 @@ import { faviconImg } from '../../lib/favicon.js';
 import { safeHref } from '../../lib/url-safe.js';
 import * as store from '../../lib/store.js';
 import { openMenu } from './menu.js';
-import { promptDialog } from './modal.js';
+import { openModal } from './modal.js';
+import { tagInput } from './tag-input.js';
 
 /**
  * @param {object} item
@@ -27,6 +28,13 @@ export function renderCard(item, collectionId, app) {
     dataset: { itemId: item.id, collectionId },
   });
 
+  if (app.isCardSelected?.(item.id)) card.classList.add('selected');
+
+  const selectBox = el('button', {
+    class: 'card-select', attrs: { 'aria-label': 'Select card', title: 'Select', type: 'button' },
+    on: { click: (e) => { e.stopPropagation(); app.toggleCardSelection?.(collectionId, item); } },
+  }, [icon('check', { size: 12 })]);
+
   const handle = el('span', { class: 'card-handle', attrs: { 'aria-hidden': 'true' } }, [icon('dots')]);
 
   const titleSpan = el('span', { class: 'card-title clamp-2' });
@@ -36,11 +44,16 @@ export function renderCard(item, collectionId, app) {
   const body = el('div', { class: 'card-body' }, [titleSpan, sourceSpan]);
   if (item.note) body.append(el('span', { class: 'card-note clamp-2', text: item.note }));
 
-  // tags
-  const tagNames = (item.tagIds || []).map((id) => app.tagsById?.[id]?.name).filter(Boolean);
-  if (tagNames.length) {
+  // tags — clicking a chip adds it to the active tag filter
+  const tagChips = (item.tagIds || []).map((id) => ({ id, tag: app.tagsById?.[id] })).filter((x) => x.tag);
+  if (tagChips.length) {
     const wrap = el('div', { class: 'card-tags' });
-    for (const name of tagNames) wrap.append(el('span', { class: 'chip', text: `#${name}` }));
+    for (const { id, tag } of tagChips) {
+      wrap.append(el('button', {
+        class: 'chip tag-chip-btn', text: `#${tag.name}`, attrs: { title: `Filter by #${tag.name}`, type: 'button' },
+        on: { click: (e) => { e.stopPropagation(); app.toggleTag?.(id); if (!app.showTagFilter) app.toggleTagFilter?.(); } },
+      }));
+    }
     body.append(wrap);
   }
 
@@ -50,7 +63,7 @@ export function renderCard(item, collectionId, app) {
     iconBtn('dots', { title: 'More', size: 14, onClick: (e) => { e.stopPropagation(); cardMenu(e.currentTarget, item, collectionId, app); } }),
   ]);
 
-  card.append(handle, faviconImg(item, app.settings.faviconSize), body, actions);
+  card.append(selectBox, handle, faviconImg(item, app.settings.faviconSize), body, actions);
 
   // open on click / Enter (ignore clicks on action buttons)
   const open = (opts) => { if (href) app.openLink(collectionId, item.id, opts); else app.toast('This link can’t be opened (unsupported URL).', { variant: 'error' }); };
@@ -104,13 +117,34 @@ function cardMenu(anchor, item, collectionId, app) {
 }
 
 async function editCard(item, collectionId, app) {
-  const title = await promptDialog({
-    title: 'Edit title', label: 'Title', value: item.title, confirmLabel: 'Save',
+  const allTags = [...(app.state?.tags || [])];
+  await openModal((close) => {
+    const titleInput = el('input', { type: 'text', value: item.title || '', attrs: { 'aria-label': 'Title' } });
+    const noteInput = el('textarea', { attrs: { 'aria-label': 'Note', placeholder: 'Optional note…' } });
+    noteInput.value = item.note || '';
+    const tags = tagInput({ collectionId, itemId: item.id, item, allTags });
+    const save = async () => {
+      const patch = {};
+      const t = titleInput.value.trim();
+      if (t && t !== item.title) patch.title = t;
+      if (noteInput.value !== (item.note || '')) patch.note = noteInput.value.trim() || null;
+      if (Object.keys(patch).length) await store.updateItem(collectionId, item.id, patch);
+      close();
+      app.toast('Card updated');
+    };
+    return {
+      title: 'Edit card',
+      body: [
+        el('label', {}, [el('span', { text: 'Title' }), titleInput]),
+        el('label', {}, [el('span', { text: 'Note' }), noteInput]),
+        el('label', {}, [el('span', { text: 'Tags' }), tags]),
+      ],
+      footer: [
+        el('button', { class: 'btn btn-ghost', text: 'Done', on: { click: () => close() } }),
+        el('button', { class: 'btn btn-primary', text: 'Save', on: { click: save } }),
+      ],
+    };
   });
-  if (title && title !== item.title) {
-    await store.updateItem(collectionId, item.id, { title });
-    app.toast('Card updated');
-  }
 }
 
 async function deleteCard(item, collectionId, app) {

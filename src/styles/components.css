@@ -270,6 +270,62 @@
 }
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
+/* ------------------------------------------------------------------ */
+/* Multi-select                                                        */
+/* ------------------------------------------------------------------ */
+.card-handle { display: none; } /* corner reserved for the select checkbox */
+.card-select, .tab-select {
+  display: grid; place-items: center; width: 18px; height: 18px; flex: none;
+  border: 1.5px solid var(--border-strong); border-radius: var(--r-xs);
+  background: var(--surface); color: transparent;
+}
+.card { align-items: flex-start; }
+.card-select { position: absolute; top: 12px; left: 12px; opacity: 0; transition: opacity var(--dur-fast); z-index: 1; }
+.card:hover .card-select, .app-shell.has-selection .card-select { opacity: 1; }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-ring); }
+.card.selected .favicon { visibility: hidden; } /* checkbox takes the favicon slot when selected */
+.card.selected .card-select,
+.tab-row.selected .tab-select { background: var(--accent); border-color: var(--accent); color: var(--on-accent); opacity: 1; }
+.tab-select { opacity: 0; transition: opacity var(--dur-fast); }
+.tab-row:hover .tab-select, .app-shell.has-selection .tab-select { opacity: 1; }
+.tab-row.selected { background: var(--accent-soft); }
+
+.selection-bar {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: center;
+  max-width: calc(100vw - 32px);
+  padding: var(--sp-2) var(--sp-3); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  box-shadow: var(--shadow-lg); z-index: var(--z-toast);
+}
+.selection-bar .sel-count { font-weight: var(--fw-semibold); margin-right: var(--sp-1); white-space: nowrap; }
+.selection-bar .btn { height: 30px; }
+
+/* ------------------------------------------------------------------ */
+/* Tag input (card edit modal)                                         */
+/* ------------------------------------------------------------------ */
+.tag-input-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px;
+  border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface);
+}
+.tag-input-chips .tag-chip { display: inline-flex; align-items: center; gap: 4px; }
+.tag-chip-x { display: inline-flex; align-items: center; color: inherit; opacity: 0.6; }
+.tag-chip-x:hover { opacity: 1; }
+.tag-input-field { flex: 1; min-width: 110px; border: none; outline: none; background: none; height: 24px; color: var(--text); }
+.tag-input-menu {
+  margin-top: 4px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--shadow-md); padding: var(--sp-1);
+  max-height: 200px; overflow-y: auto;
+}
+.tag-input-opt {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  height: 30px; padding: 0 var(--sp-2); border-radius: var(--r-sm);
+}
+.tag-input-opt:hover { background: var(--surface-2); }
+.tag-input-create { color: var(--accent); }
+.tag-chip-btn { cursor: pointer; }
+.tag-chip-btn:hover { background: var(--accent-soft); color: var(--accent); }
+
 /* Drag ghost element */
 .drag-ghost {
   position: fixed; top: -1000px; left: -1000px; pointer-events: none;

@@ -27,7 +27,10 @@ depend on.
   **duplicates** and **already-saved** tabs.
 - **Spaces** (workspaces) → **Collections** → **cards**, with **drag & drop** to
   reorder and move between collections/spaces.
-- **Search** across everything and **tag filtering** (AND/OR).
+- **Search** across everything (with match highlighting) and **tags** — add/assign
+  tags on any card and **filter** by them (AND/OR).
+- **Bulk multi-select** in the Open Tabs panel and in collections (save / move /
+  tag / close many at once) and **auto-suggested** save targets by domain.
 - **Export / import** the whole library as one JSON file.
 - **Light / dark / system** theme.
 - Strict, **network-free** security model (see below).

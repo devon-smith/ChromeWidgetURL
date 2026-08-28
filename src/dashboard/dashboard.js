@@ -15,6 +15,9 @@ import { mountOpenTabs } from './components/open-tabs-panel.js';
 import { toast } from './components/toast.js';
 import { confirmDialog, promptDialog, openModal } from './components/modal.js';
 import { initDnd } from './components/dnd.js';
+import { updateSelectionBar } from './components/selection-bar.js';
+import { suggestCollectionId } from '../lib/suggest.js';
+import { openMenu } from './components/menu.js';
 
 const els = {
   shell: document.getElementById('app-shell'),
@@ -32,6 +35,8 @@ const app = {
   search: '',
   showTagFilter: false,
   tagFilter: { ids: new Set(), mode: 'or' },
+  selectedCards: new Map(), // itemId -> collectionId
+  selectedTabs: new Map(),  // tabId -> tab
   toast,
 };
 
@@ -96,6 +101,8 @@ function render() {
   renderSidebar(els.sidebar, app);
   renderToolbar(els.toolbar, app);
   renderCollections(els.center, computeView(), app);
+  els.shell.classList.toggle('has-selection', app.selectedCards.size > 0 || app.selectedTabs.size > 0);
+  updateSelectionBar(app);
 }
 
 function applyTheme(theme) {
@@ -292,6 +299,105 @@ app.clearFilters = () => { app.search = ''; app.tagFilter.ids.clear(); render();
 function syncSearchInput() {
   if (app.searchInputRef && app.searchInputRef.value !== app.search) app.searchInputRef.value = app.search;
 }
+
+/* --------------------------- selection (bulk) ------------------------- */
+function refreshSelectionMode() {
+  const any = app.selectedCards.size > 0 || app.selectedTabs.size > 0;
+  els.shell.classList.toggle('has-selection', any);
+  updateSelectionBar(app);
+}
+
+app.isCardSelected = (itemId) => app.selectedCards.has(itemId);
+app.isTabSelected = (tabId) => app.selectedTabs.has(tabId);
+
+app.toggleCardSelection = (collectionId, item, on) => {
+  const want = on == null ? !app.selectedCards.has(item.id) : on;
+  if (want) app.selectedCards.set(item.id, collectionId); else app.selectedCards.delete(item.id);
+  const node = els.center.querySelector(`.card[data-item-id="${CSS.escape(item.id)}"]`);
+  if (node) node.classList.toggle('selected', want);
+  refreshSelectionMode();
+};
+
+app.toggleTabSelection = (tab, on) => {
+  const want = on == null ? !app.selectedTabs.has(tab.id) : on;
+  if (want) app.selectedTabs.set(tab.id, tab); else app.selectedTabs.delete(tab.id);
+  const node = els.tabs.querySelector(`.tab-row[data-tab-id="${CSS.escape(String(tab.id))}"]`);
+  if (node) node.classList.toggle('selected', want);
+  refreshSelectionMode();
+};
+
+app.clearSelection = () => {
+  app.selectedCards.clear(); app.selectedTabs.clear();
+  els.center.querySelectorAll('.card.selected').forEach((n) => n.classList.remove('selected'));
+  els.tabs.querySelectorAll('.tab-row.selected').forEach((n) => n.classList.remove('selected'));
+  refreshSelectionMode();
+};
+
+function chooseCollection(anchor, cb) {
+  const items = [];
+  for (const s of app.state.spaces) for (const c of s.collections) items.push({ label: `${c.name} · ${s.name}`, icon: 'save', onClick: () => cb(c.id) });
+  items.push({ separator: true });
+  items.push({ label: 'New collection…', icon: 'plus', onClick: async () => { const id = await app.addCollection(); if (id) cb(id); } });
+  openMenu(anchor || els.shell, items);
+}
+
+app.saveSelectedTabs = (anchor, { close = false } = {}) => {
+  const arr = [...app.selectedTabs.values()].filter((t) => safeHref(t.url)).sort((a, b) => a.index - b.index);
+  if (!arr.length) { toast('No saveable tabs selected', { variant: 'error' }); return; }
+  chooseCollection(anchor, async (collectionId) => {
+    const created = await store.addItemsFromTabs(collectionId, arr);
+    let closedUrls = [];
+    if (close) { closedUrls = arr.map((t) => t.url); await tabsLib.closeTabsKeepWindowsAlive(arr.map((t) => t.id)); }
+    app.clearSelection();
+    toast(`Saved ${created.length} tab${created.length === 1 ? '' : 's'}${close ? ' & closed' : ''}`,
+      close ? { variant: 'success', undo: async () => { await tabsLib.reopenUrls(closedUrls); } } : { variant: 'success' });
+  });
+};
+
+app.closeSelectedTabs = async () => {
+  const ids = [...app.selectedTabs.keys()];
+  const urls = [...app.selectedTabs.values()].map((t) => t.url).filter((u) => safeHref(u));
+  if (!ids.length) return;
+  await tabsLib.closeTabsKeepWindowsAlive(ids);
+  app.clearSelection();
+  toast(`Closed ${ids.length} tab${ids.length === 1 ? '' : 's'}`, { undo: async () => { await tabsLib.reopenUrls(urls); } });
+};
+
+app.moveSelectedCards = (anchor) => {
+  const entries = [...app.selectedCards.entries()];
+  if (!entries.length) return;
+  chooseCollection(anchor, async (toId) => {
+    for (const [itemId, fromId] of entries) if (fromId !== toId) await store.moveItem(itemId, fromId, toId, -1);
+    const n = entries.length; app.clearSelection();
+    toast(`Moved ${n} card${n === 1 ? '' : 's'}`);
+  });
+};
+
+app.tagSelectedCards = (anchor) => {
+  const entries = [...app.selectedCards.entries()];
+  if (!entries.length) return;
+  const applyTag = async (tagId) => { for (const [itemId, fromId] of entries) await store.assignTag(fromId, itemId, tagId); const n = entries.length; app.clearSelection(); toast(`Tagged ${n} card${n === 1 ? '' : 's'}`); };
+  const items = app.state.tags.map((t) => ({ label: `#${t.name}`, icon: 'tag', onClick: () => applyTag(t.id) }));
+  if (items.length) items.push({ separator: true });
+  items.push({ label: 'New tag…', icon: 'plus', onClick: async () => { const name = await promptDialog({ title: 'New tag', label: 'Tag name', confirmLabel: 'Create' }); if (name) { const t = await store.createTag({ name }); applyTag(t.id); } } });
+  openMenu(anchor || els.shell, items);
+};
+
+app.deleteSelectedCards = async () => {
+  const entries = [...app.selectedCards.entries()];
+  if (!entries.length) return;
+  const ok = await confirmDialog({ title: 'Delete cards?', message: `Delete ${entries.length} selected card${entries.length === 1 ? '' : 's'}? This can be undone.`, confirmLabel: 'Delete', danger: true });
+  if (!ok) return;
+  const snaps = entries.map(([itemId, fromId]) => {
+    const c = app.findCollection(fromId);
+    const idx = c ? c.items.findIndex((i) => i.id === itemId) : -1;
+    const item = c ? c.items.find((i) => i.id === itemId) : null;
+    return { fromId, item, idx };
+  }).filter((s) => s.item);
+  for (const [itemId, fromId] of entries) await store.deleteItem(fromId, itemId);
+  const n = entries.length; app.clearSelection();
+  toast(`Deleted ${n} card${n === 1 ? '' : 's'}`, { undo: async () => { for (const s of snaps) await store.insertItem(s.fromId, s.item, s.idx); } });
+};
 
 /* --------------------------- keyboard --------------------------------- */
 function wireKeyboard() {

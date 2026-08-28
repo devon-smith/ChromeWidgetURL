@@ -9,6 +9,7 @@ import * as store from '../../lib/store.js';
 import * as tabsLib from '../../lib/tabs.js';
 import { debounce } from '../../lib/debounce.js';
 import { openMenu } from './menu.js';
+import { suggestCollectionId } from '../../lib/suggest.js';
 import * as dnd from './dnd.js';
 
 export function mountOpenTabs(container, app) {
@@ -63,10 +64,16 @@ export function mountOpenTabs(container, app) {
     const savedIn = norm ? savedMap.get(norm) : null;
     const isDup = norm && dupCounts.get(norm) > 1;
 
+    const selected = app.isTabSelected?.(tab.id);
     const row = el('div', {
-      class: `tab-row ${tab.active ? 'is-active' : ''} ${openable ? '' : 'restricted'}`,
+      class: `tab-row ${tab.active ? 'is-active' : ''} ${openable ? '' : 'restricted'} ${selected ? 'selected' : ''}`.trim(),
       attrs: { title: tab.url || '', role: 'listitem' },
+      dataset: { tabId: String(tab.id) },
     }, [
+      openable ? el('button', {
+        class: 'tab-select', attrs: { 'aria-label': 'Select tab', title: 'Select', type: 'button' },
+        on: { click: (e) => { e.stopPropagation(); app.toggleTabSelection?.(tab); } },
+      }, [icon('check', { size: 12 })]) : null,
       faviconImg({ url: tab.url || '', domain: '' }, app.settings.faviconSize),
       el('span', { class: 'tab-title clamp-1', text: tab.title || tab.url || 'Untitled' }),
     ]);
@@ -91,10 +98,13 @@ export function mountOpenTabs(container, app) {
   function saveMenu(anchor, tab, app) {
     const targets = [];
     for (const s of app.state.spaces) for (const c of s.collections) targets.push({ c, s });
+    // Float the suggested collection (by domain) to the top.
+    const suggestedId = safeHref(tab.url) ? suggestCollectionId(app.state, tab.url) : null;
+    targets.sort((a, b) => (b.c.id === suggestedId ? 1 : 0) - (a.c.id === suggestedId ? 1 : 0));
     const items = [
       { labelHeading: 'Save to' },
       ...targets.slice(0, 8).map(({ c, s }) => ({
-        label: `${c.name} · ${s.name}`, icon: 'save',
+        label: `${c.name} · ${s.name}${c.id === suggestedId ? '  · suggested' : ''}`, icon: 'save',
         onClick: async () => { const r = await store.addItemsFromTabs(c.id, [tab]); app.toast(r.length ? `Saved to ${c.name}` : 'Already saved'); },
       })),
       { separator: true },

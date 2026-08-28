@@ -6,6 +6,7 @@ import * as store from '../lib/store.js';
 import { send, MessageTypes } from '../lib/messaging.js';
 import { safeHref, normalizeUrl } from '../lib/url-safe.js';
 import { applyThemeFromSettings } from '../lib/theme.js';
+import { suggestCollectionId } from '../lib/suggest.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -22,11 +23,15 @@ async function boot() {
   select.replaceChildren();
   for (const o of opts) select.append(new Option(o.label, o.id));
   select.append(new Option('➕ New collection…', NEW));
-  const last = state.settings.lastTargetCollectionId;
-  if (last && opts.some((o) => o.id === last)) select.value = last;
 
-  // stats
+  // stats + suggested target based on the active tab's domain
   const winTabs = await chrome.tabs.query({ currentWindow: true });
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const suggested = activeTab && safeHref(activeTab.url) ? suggestCollectionId(state, activeTab.url) : null;
+  const last = state.settings.lastTargetCollectionId;
+  if (suggested && opts.some((o) => o.id === suggested)) select.value = suggested;
+  else if (last && opts.some((o) => o.id === last)) select.value = last;
+
   const saveable = winTabs.filter((t) => safeHref(t.url));
   const savedSet = new Set();
   for (const s of state.spaces) for (const c of s.collections) for (const it of c.items) savedSet.add(normalizeUrl(it.url));

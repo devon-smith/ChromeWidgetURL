@@ -58,6 +58,7 @@ const ICONS = {
   list: 'M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z',
   tag: 'M2 12l9 9 11-11V2h-9zM17.5 7A1.5 1.5 0 1 1 17.5 4a1.5 1.5 0 0 1 0 3z',
   gear: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9 4-2 .3.6 2-2 1.2-1.4-1.5-1.8 1V19l-2 .8-1-1.7H10l-1 1.7-2-.8v-2.2l-1.8-1L3.8 17l-2-1.2.6-2L.4 12l.9-1.8-.6-2 2-1.2 1.4 1.5 1.8-1V4l2-.8 1 1.7h1.2l1-1.7 2 .8v2.2l1.8 1 1.4-1.5 2 1.2-.6 2z',
+  check: 'M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z',
 };
 export function icon(name, { size = 16, cls = 'icon' } = {}) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

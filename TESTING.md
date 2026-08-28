@@ -156,7 +156,11 @@ Start now with §1 setup, then run §2 through §14, then §15 cleanup.
 
 ## Known gaps to expect (not failures)
 
-- **Tags / Tag filter:** the storage layer supports tags, but there is **no UI yet** to create or assign a tag to a card, so the "Tag filter" toolbar shows "no tags yet". Tag assignment is a planned follow-up — don't file it as a bug.
+- **Sync / multi-device:** desktop-only for now. Google Drive sync + an iPhone
+  companion are the next planned phase.
+
+_(Tags are now fully wired — add/assign them via a card's ⋯ → Edit, and the Tag
+Filter works. Bulk multi-select and save-target auto-suggest are also live.)_
 
 ## Automated smoke test (no browser)
 
