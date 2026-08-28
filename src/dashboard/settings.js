@@ -1,6 +1,7 @@
 // Settings page: reads/writes settings, export/import, storage usage, wipe.
 
 import * as store from '../lib/store.js';
+import * as sync from '../lib/sync.js';
 import { applyThemeFromSettings } from '../lib/theme.js';
 import { toast } from './components/toast.js';
 import { confirmDialog } from './components/modal.js';
@@ -28,6 +29,11 @@ async function boot() {
   $('import-replace').addEventListener('click', () => triggerImport('replace'));
   $('import-file').addEventListener('change', onFileChosen);
   $('wipe').addEventListener('click', doWipe);
+
+  $('sync-connect').addEventListener('click', doConnect);
+  $('sync-now').addEventListener('click', doSyncNow);
+  $('sync-disconnect').addEventListener('click', doDisconnect);
+  await refreshSync();
 
   await refreshUsage();
   const meta = (await store.getState()).meta;
@@ -99,6 +105,51 @@ async function doWipe() {
   await store.init();
   toast('All data deleted', { variant: 'success' });
   await refreshUsage();
+}
+
+/* ------------------------------ sync ------------------------------ */
+async function refreshSync() {
+  const s = await store.getSettings();
+  const connected = !!s.syncConnected;
+  $('sync-connect').hidden = connected;
+  $('sync-now').hidden = !connected;
+  $('sync-disconnect').hidden = !connected;
+  if (connected) {
+    const when = s.lastSyncAt ? new Date(s.lastSyncAt).toLocaleString() : 'never';
+    $('sync-status').textContent = `Connected · last synced: ${when}`;
+  } else {
+    $('sync-status').textContent = 'Not connected — your library stays on this device only.';
+  }
+}
+
+async function doConnect() {
+  $('sync-status').textContent = 'Connecting…';
+  try {
+    await sync.connect();
+    toast('Connected & synced', { variant: 'success' });
+  } catch (e) {
+    toast('Connect failed: ' + (e.message || e), { variant: 'error' });
+  }
+  await refreshSync();
+}
+
+async function doSyncNow() {
+  $('sync-status').textContent = 'Syncing…';
+  try {
+    const r = await sync.syncNow({ interactive: true });
+    toast(r.uploaded || r.applied || r.status === 'created' ? 'Synced' : 'Already up to date', { variant: 'success' });
+  } catch (e) {
+    toast('Sync failed: ' + (e.message || e), { variant: 'error' });
+  }
+  await refreshSync();
+}
+
+async function doDisconnect() {
+  const ok = await confirmDialog({ title: 'Disconnect Google Drive?', message: 'Local Toby will stop syncing. Your local data and the Drive file are both kept.', confirmLabel: 'Disconnect' });
+  if (!ok) return;
+  await sync.disconnect();
+  toast('Disconnected');
+  await refreshSync();
 }
 
 boot().catch((e) => toast('Failed to load settings: ' + (e.message || e), { variant: 'error' }));

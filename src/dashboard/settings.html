@@ -47,6 +47,17 @@
     </div>
 
     <div class="card-sec">
+      <h2>Sync across devices</h2>
+      <p class="usage" id="sync-status">Checking…</p>
+      <div class="data-actions">
+        <button class="btn btn-primary" id="sync-connect">Connect Google Drive</button>
+        <button class="btn" id="sync-now" hidden>Sync now</button>
+        <button class="btn btn-ghost" id="sync-disconnect" hidden>Disconnect</button>
+      </div>
+      <p class="usage">Your library syncs to a single <code>local-toby-library.json</code> in <b>your</b> Google Drive (scope: files this app creates). No third-party server; disconnect any time.</p>
+    </div>
+
+    <div class="card-sec">
       <h2>Backup &amp; data</h2>
       <div class="data-actions">
         <button class="btn btn-primary" id="export">Export JSON backup</button>

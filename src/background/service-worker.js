@@ -10,6 +10,8 @@ import { routeMessage, openDashboard } from './message-router.js';
 import { handleCommand } from './commands.js';
 import { setupContextMenus, handleContextMenuClick } from './context-menus.js';
 import * as store from '../lib/store.js';
+import * as sync from '../lib/sync.js';
+import { SYNC_ALARM, SYNC_PERIOD_MIN, PUSH_DEBOUNCE_MS } from '../lib/sync-config.js';
 import { debounce } from '../lib/debounce.js';
 import { log } from '../lib/logger.js';
 
@@ -19,6 +21,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     try {
       await store.init({ withGettingStarted: details.reason === 'install' });
       await setupContextMenus();
+      chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MIN });
+      sync.autoSync().catch(() => {});
       if (details.reason === 'install') await openDashboard();
     } catch (e) { log.error('onInstalled failed', e); }
   })();
@@ -26,10 +30,21 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 chrome.runtime.onStartup.addListener(() => {
   (async () => {
-    try { await store.init(); await setupContextMenus(); }
-    catch (e) { log.error('onStartup failed', e); }
+    try {
+      await store.init(); await setupContextMenus();
+      chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MIN });
+      sync.autoSync().catch(() => {});
+    } catch (e) { log.error('onStartup failed', e); }
   })();
 });
+
+// ---- periodic background sync -------------------------------------------
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === SYNC_ALARM) sync.autoSync().catch((e) => log.warn('sync alarm', e));
+});
+
+// ---- push local changes up (debounced) ---------------------------------
+const pushSoon = debounce(() => { sync.autoSync().catch((e) => log.warn('push sync', e)); }, PUSH_DEBOUNCE_MS);
 
 // ---- messaging (async response requires synchronous `return true`) ------
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -49,9 +64,14 @@ chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 const rebuildMenus = debounce(() => { setupContextMenus().catch((e) => log.warn(e)); }, 1500);
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'local') return;
-  const touchedStructure = Object.keys(changes).some(
-    (k) => k === 'meta' || k.startsWith('space:') || k.startsWith('collection:'));
-  if (touchedStructure) rebuildMenus();
+  const keys = Object.keys(changes);
+  const touchedStructure = keys.some(
+    (k) => k === 'meta' || k === 'tags' || k === 'deletions' || k.startsWith('space:') || k.startsWith('collection:'));
+  if (touchedStructure) {
+    rebuildMenus();
+    // Push to Drive on real content changes — but never for sync's own writes.
+    if (!sync.isSyncing()) pushSoon();
+  }
 });
 
 // ---- side panel behavior ------------------------------------------------

@@ -32,6 +32,10 @@ depend on.
 - **Bulk multi-select** in the Open Tabs panel and in collections (save / move /
   tag / close many at once) and **auto-suggested** save targets by domain.
 - **Export / import** the whole library as one JSON file.
+- **Optional Google Drive sync** across devices — into *your own* Drive (a single
+  `local-toby-library.json`, scope `drive.file`), with tombstone-based deletion
+  propagation and last-write-wins merge. Opt-in; nothing touches the network
+  until you connect.
 - **Light / dark / system** theme.
 - Strict, **network-free** security model (see below).
 
@@ -107,8 +111,13 @@ companion-newtab/        optional new-tab override (separate extension)
 
 - No host permissions, no content scripts — the extension never reads page
   content, only tab metadata (title/URL/favicon) and its own pages.
-- Strict CSP: no remote or inline scripts, no remote fonts, `connect-src 'self'`
-  blocks all network access.
+- Strict CSP: no remote or inline scripts, no remote fonts. `connect-src` is
+  `'self'` plus **only** Google's API endpoints (`www.googleapis.com`,
+  `oauth2.googleapis.com`) — used solely by the opt-in Drive sync, which stays
+  inert until you connect. No other network access is possible.
+- Sync uses OAuth via `chrome.identity.launchWebAuthFlow` (token flow, **no
+  client secret shipped**) and the least-privilege `drive.file` scope, so the
+  extension can only see the one file it creates.
 - Saved titles/URLs are treated as untrusted: rendered via `textContent` only
   (never `innerHTML`), and only `http/https/ftp/file` URLs can be saved or opened
   (`javascript:`, `data:`, etc. are refused).
