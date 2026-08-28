@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "Local Toby — Tab Collections",
   "version": "0.1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxBUwjJwgmWwSOk/6FAuzNojx7Nw7f5ATkDej4pmfsk7BDskJQY3tZIPbHjggUqoVNka+3yIjKVVx/TRVtJ/CfHvLZ2ZkmK1ZRUOE9OWNRn+X7f+56XIJ4J+bzcZ0FRfCB70UvDxVnnMqEtjb7rl3qvjT9GD9Qbq6U0pfY1CgKvZR104BV+yluKcYtsGM6ZtZZvVI9ZYP+KSRyVIBCi84e4YK11GbcdKGlK9EscLFNE5gw/NPfzHX+prNBLFN/moECOOcckUFwXbfyXlVOY0mkjfZko7cJrrg2WIV22WDIM2/e21qPSSt7nly/joQyBfrsUtbcX+h9rzqpK/qlIuVawIDAQAB",
   "description": "Local-first tab & collection manager. Save, organize, and restore tabs across spaces. All data stays on your machine — no account, no cloud.",
   "minimum_chrome_version": "116",
   "icons": {
