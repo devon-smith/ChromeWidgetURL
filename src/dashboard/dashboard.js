@@ -56,6 +56,8 @@ async function boot() {
   render();
   wireKeyboard();
   wireResponsiveToggles();
+  // Re-evaluate the icon rail as the window crosses the 639px threshold.
+  RAIL_MQ.addEventListener('change', updateShellClasses);
 
   const scheduleSync = rafCoalesce(async () => { await loadState(); render(); openTabsCtl?.refresh(); currentTabsCtl?.refresh(); });
   // Skip re-render on non-structural writes (e.g. touchItemOpened bumps no rev),
@@ -116,10 +118,16 @@ function applyTheme(theme) {
   else delete root.dataset.theme;
 }
 
+// Matches the CSS rail breakpoint in layout.css; kept in sync via a listener.
+const RAIL_MQ = window.matchMedia('(max-width: 639px)');
+
 function updateShellClasses() {
   els.shell.classList.toggle('sidebar-collapsed', !!app.settings.sidebarCollapsed);
   els.shell.classList.toggle('tabs-hidden', app.settings.openTabsPanelVisible === false);
   els.shell.classList.toggle('view-list', app.settings.defaultView === 'list');
+  // Icon rail when manually collapsed, or when the viewport is too narrow for
+  // the full sidebar (matches the ≤639px grid in layout.css).
+  els.shell.classList.toggle('sidebar-rail', !!app.settings.sidebarCollapsed || RAIL_MQ.matches);
 }
 
 /* --------------------------- filtering -------------------------------- */

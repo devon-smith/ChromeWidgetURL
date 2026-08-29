@@ -15,7 +15,7 @@ export function renderSidebar(container, app) {
   inner.append(el('div', { class: 'workspace-switcher', attrs: { role: 'button', tabindex: '0' } }, [
     el('span', { class: 'workspace-avatar', text: '🧭' }),
     el('span', { class: 'workspace-name clamp-1', text: 'Local Toby' }),
-    iconBtn('list', { title: 'Collapse sidebar', cls: 'sidebar-collapse-btn', size: 15, onClick: () => app.toggleSidebar() }),
+    iconBtn('list', { title: 'Toggle sidebar', cls: 'sidebar-collapse-btn', size: 15, onClick: () => app.toggleSidebar() }),
   ]));
 
   // search
@@ -98,7 +98,7 @@ function spaceItem(s, app) {
   const count = s.collections.length;
   const li = el('li', {
     class: `space-item ${active ? 'is-active' : ''}`,
-    attrs: { role: 'button', tabindex: '0', 'aria-current': active ? 'page' : null },
+    attrs: { role: 'button', tabindex: '0', 'aria-current': active ? 'page' : null, title: s.name },
     dataset: { spaceId: s.id },
     on: {
       click: () => app.setActiveSpace(s.id),

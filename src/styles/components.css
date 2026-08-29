@@ -64,6 +64,30 @@
 }
 .add-space-row:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 
+/* ---- Sidebar icon rail: manual collapse OR narrow viewport (<=639px) ---- */
+/* Shows only icons — labels, search, section titles and per-row controls are
+   hidden so nothing gets clipped/bleeds at rail width. Space rows stay clickable
+   (switch space) with the space name as a hover tooltip. `font-size:0` drops
+   text nodes we can't target directly while SVG icons keep their sized dims. */
+.app-shell.sidebar-rail .region-sidebar { overflow-x: hidden; }
+.app-shell.sidebar-rail .workspace-switcher { justify-content: center; gap: 0; padding: var(--sp-2) 0; }
+.app-shell.sidebar-rail .workspace-avatar,
+.app-shell.sidebar-rail .workspace-name,
+.app-shell.sidebar-rail .sidebar-search,
+.app-shell.sidebar-rail .sidebar-section-title,
+.app-shell.sidebar-rail .space-label,
+.app-shell.sidebar-rail .space-count,
+.app-shell.sidebar-rail .space-star,
+.app-shell.sidebar-rail .space-menu,
+.app-shell.sidebar-rail .sync-pill .clamp-1 { display: none; }
+.app-shell.sidebar-rail .sidebar-collapse-btn { margin: 0; }
+.app-shell.sidebar-rail .space-list { padding: 0 var(--sp-1) var(--sp-2); }
+.app-shell.sidebar-rail .space-item { justify-content: center; padding: 0; gap: 0; }
+.app-shell.sidebar-rail .add-space-row { justify-content: center; gap: 0; font-size: 0; margin: 0 var(--sp-1); padding: var(--sp-2) 0; }
+.app-shell.sidebar-rail .sidebar-footer { flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-2) 0; }
+.app-shell.sidebar-rail .sidebar-footer .btn { font-size: 0; padding: var(--sp-2); }
+.app-shell.sidebar-rail .sync-pill { justify-content: center; padding: var(--sp-2); }
+
 .sidebar-footer { margin-top: auto; padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--divider); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-1); }
 .sync-pill {
   display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--sp-2);

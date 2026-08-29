@@ -71,17 +71,20 @@
   }
   .app-shell.tabs-drawer-open .region-tabs { transform: translateX(0); display: flex; }
 }
-@media (max-width: 899px) {
-  .app-shell { grid-template-columns: var(--sidebar-rail-w) minmax(0, 1fr); }
-}
+/* Narrow viewports (<=639px): collapse the sidebar to an icon rail — never a
+   squeezed full sidebar and never an off-canvas drawer — so the center pane
+   always sits in a valid grid column and the space icons stay tappable. The
+   icon-only styling is applied via the `.sidebar-rail` class (components.css),
+   toggled at this same 639px threshold. Medium widths (640–899px) keep the
+   full, labelled sidebar. The state-combo selectors override the base
+   `.tabs-hidden` / `.sidebar-collapsed` grids (which have higher specificity). */
 @media (max-width: 639px) {
-  .app-shell { grid-template-columns: minmax(0, 1fr); }
-  .region-sidebar {
-    position: fixed; top: 0; left: 0; height: 100vh; width: min(300px, 90vw);
-    z-index: var(--z-drawer); box-shadow: var(--shadow-lg);
-    transform: translateX(-100%); transition: transform var(--dur-base) var(--ease-out);
+  .app-shell,
+  .app-shell.sidebar-collapsed,
+  .app-shell.tabs-hidden,
+  .app-shell.sidebar-collapsed.tabs-hidden {
+    grid-template-columns: var(--sidebar-rail-w) minmax(0, 1fr);
   }
-  .app-shell.sidebar-drawer-open .region-sidebar { transform: translateX(0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .region-tabs, .region-sidebar { transition: none !important; }
