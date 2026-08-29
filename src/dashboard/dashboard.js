@@ -18,6 +18,7 @@ import { initDnd } from './components/dnd.js';
 import { updateSelectionBar } from './components/selection-bar.js';
 import { suggestCollectionId } from '../lib/suggest.js';
 import { openMenu } from './components/menu.js';
+import { openCommandPalette } from './components/command-palette.js';
 
 const els = {
   shell: document.getElementById('app-shell'),
@@ -290,6 +291,23 @@ app.toggleSidebar = () => store.updateSettings({ sidebarCollapsed: !app.settings
 app.toggleTabsPanel = () => store.updateSettings({ openTabsPanelVisible: app.settings.openTabsPanelVisible === false });
 app.openSettings = () => chrome.tabs.create({ url: chrome.runtime.getURL('src/dashboard/settings.html') });
 
+app.quickSaveCurrentTab = async () => {
+  const tab = await pickCaptureTab();
+  if (!tab) { toast('No saveable tab to capture', { variant: 'error' }); return; }
+  let collectionId = suggestCollectionId(app.state, tab.url) || app.activeSpace?.collections[0]?.id;
+  if (!collectionId) { collectionId = await app.addCollection(); if (!collectionId) return; }
+  const r = await store.addItemsFromTabs(collectionId, [tab]);
+  toast(r.length ? 'Tab saved' : 'Already in that collection');
+};
+
+app.goToCollection = async (spaceId, collectionId) => {
+  if (app.state.meta.activeSpaceId !== spaceId) await store.setActiveSpace(spaceId);
+  setTimeout(() => {
+    const node = els.center.querySelector(`[data-collection-el="${CSS.escape(collectionId)}"]`);
+    if (node) { node.scrollIntoView({ behavior: 'smooth', block: 'start' }); node.classList.add('flash'); setTimeout(() => node.classList.remove('flash'), 1200); }
+  }, 150);
+};
+
 app.setSearch = (q) => { app.search = q; renderCollections(els.center, computeView(), app); syncSearchInput(); };
 app.toggleTagFilter = () => { app.showTagFilter = !app.showTagFilter; renderToolbar(els.toolbar, app); };
 app.toggleTag = (id) => { app.tagFilter.ids.has(id) ? app.tagFilter.ids.delete(id) : app.tagFilter.ids.add(id); renderToolbar(els.toolbar, app); renderCollections(els.center, computeView(), app); };
@@ -403,6 +421,9 @@ app.deleteSelectedCards = async () => {
 function wireKeyboard() {
   document.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '') || document.activeElement?.isContentEditable;
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault(); openCommandPalette(app); return;
+    }
     if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key === 'f')) {
       e.preventDefault(); app.searchInputRef?.focus(); return;
     }

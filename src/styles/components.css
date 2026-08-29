@@ -335,6 +335,31 @@
 .tag-chip-btn { cursor: pointer; }
 .tag-chip-btn:hover { background: var(--accent-soft); color: var(--accent); }
 
+/* ------------------------------------------------------------------ */
+/* Command palette (⌘K)                                                */
+/* ------------------------------------------------------------------ */
+.cmdk-scrim {
+  position: fixed; inset: 0; background: var(--overlay-scrim); backdrop-filter: blur(2px);
+  z-index: var(--z-modal); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 16px;
+}
+.cmdk {
+  width: min(640px, 94vw); max-height: 70vh; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: var(--shadow-lg);
+  animation: modal-in var(--dur-base) var(--ease-out);
+}
+.cmdk-inputrow { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--divider); color: var(--text-3); }
+.cmdk-input { flex: 1; border: none; outline: none; background: none; color: var(--text); font-size: var(--fs-lg); }
+.cmdk-list { overflow-y: auto; padding: var(--sp-1); }
+.cmdk-item { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md); color: var(--text); cursor: pointer; }
+.cmdk-item.is-active { background: var(--accent-soft); }
+.cmdk-item .icon { color: var(--text-3); }
+.cmdk-label { flex: 1; min-width: 0; }
+.cmdk-hint { font-size: var(--fs-xs); color: var(--text-3); flex: none; }
+.cmdk-empty { padding: var(--sp-6); text-align: center; color: var(--text-3); }
+.cmdk-foot { padding: var(--sp-2) var(--sp-4); border-top: 1px solid var(--divider); font-size: var(--fs-2xs); color: var(--text-3); }
+.collection.flash { border-radius: var(--r-md); animation: flashring 1.2s var(--ease-out); }
+@keyframes flashring { 0% { box-shadow: 0 0 0 3px var(--accent-ring); } 100% { box-shadow: 0 0 0 3px transparent; } }
+
 /* Drag ghost element */
 .drag-ghost {
   position: fixed; top: -1000px; left: -1000px; pointer-events: none;
