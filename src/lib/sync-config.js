@@ -14,6 +14,12 @@ export const SYNC_ALARM = 'local-toby-sync';
 export const SYNC_PERIOD_MIN = 5;
 export const PUSH_DEBOUNCE_MS = 8000;
 
+// Automatic timestamped backups into a Drive folder.
+export const BACKUP_ALARM = 'local-toby-backup';
+export const BACKUP_PERIOD_MIN = 1440; // daily
+export const BACKUP_FOLDER = 'Local Toby Backups';
+export const BACKUP_KEEP = 10;
+
 export function isConfigured() {
   return typeof CLIENT_ID === 'string' && CLIENT_ID.endsWith('.apps.googleusercontent.com');
 }

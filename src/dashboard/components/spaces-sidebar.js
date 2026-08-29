@@ -50,10 +50,34 @@ export function renderSidebar(container, app) {
 
   // footer
   inner.append(el('div', { class: 'sidebar-footer' }, [
+    syncPill(app),
     el('button', { class: 'btn btn-ghost', on: { click: () => app.openSettings() } }, [icon('gear'), 'Settings']),
   ]));
 
   container.append(inner);
+}
+
+function relTime(ts) {
+  if (!ts) return '';
+  const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (s < 45) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return `${Math.round(s / 86400)}d ago`;
+}
+
+function syncPill(app) {
+  const s = app.settings || {};
+  const connected = !!s.syncConnected;
+  const rel = connected ? relTime(s.lastSyncAt) : '';
+  return el('button', {
+    class: `sync-pill ${connected ? 'is-on' : ''}`,
+    attrs: { title: connected ? 'Synced to Google Drive — open Settings' : 'Sync is off — open Settings' },
+    on: { click: () => app.openSettings() },
+  }, [
+    el('span', { class: 'sync-dot' }),
+    el('span', { class: 'clamp-1', text: connected ? `Synced${rel ? ' · ' + rel : ''}` : 'Sync off' }),
+  ]);
 }
 
 function sectionTitle(text, onAdd) {

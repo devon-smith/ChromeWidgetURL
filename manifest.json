@@ -21,6 +21,9 @@
     "identity",
     "alarms"
   ],
+  "optional_permissions": [
+    "bookmarks"
+  ],
   "host_permissions": [
     "https://www.googleapis.com/*",
     "https://oauth2.googleapis.com/*"

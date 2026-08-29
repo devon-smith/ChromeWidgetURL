@@ -2,6 +2,9 @@
 
 import * as store from '../lib/store.js';
 import * as sync from '../lib/sync.js';
+import { runBackup } from '../lib/backup.js';
+import { tobyToBackup } from '../lib/import-toby.js';
+import { bookmarksToBackup } from '../lib/import-bookmarks.js';
 import { applyThemeFromSettings } from '../lib/theme.js';
 import { toast } from './components/toast.js';
 import { confirmDialog } from './components/modal.js';
@@ -33,6 +36,10 @@ async function boot() {
   $('sync-connect').addEventListener('click', doConnect);
   $('sync-now').addEventListener('click', doSyncNow);
   $('sync-disconnect').addEventListener('click', doDisconnect);
+  $('backup-now').addEventListener('click', doBackupNow);
+  $('import-toby').addEventListener('click', () => { $('toby-file').value = ''; $('toby-file').click(); });
+  $('toby-file').addEventListener('change', onTobyFile);
+  $('import-bookmarks').addEventListener('click', doImportBookmarks);
   await refreshSync();
 
   await refreshUsage();
@@ -114,12 +121,52 @@ async function refreshSync() {
   $('sync-connect').hidden = connected;
   $('sync-now').hidden = !connected;
   $('sync-disconnect').hidden = !connected;
+  $('backup-now').hidden = !connected;
   if (connected) {
     const when = s.lastSyncAt ? new Date(s.lastSyncAt).toLocaleString() : 'never';
     $('sync-status').textContent = `Connected · last synced: ${when}`;
   } else {
     $('sync-status').textContent = 'Not connected — your library stays on this device only.';
   }
+  $('last-backup').textContent = s.lastBackupAt ? `Last Drive backup: ${new Date(s.lastBackupAt).toLocaleString()}` : '';
+}
+
+async function doBackupNow() {
+  try {
+    const r = await runBackup({ interactive: true });
+    if (r.status === 'ok') toast(`Backed up${r.pruned ? ` · pruned ${r.pruned} old` : ''}`, { variant: 'success' });
+    else if (r.status === 'not-connected') toast('Connect Google Drive first', { variant: 'error' });
+    else toast('Backup: ' + r.status, { variant: 'error' });
+  } catch (e) { toast('Backup failed: ' + (e.message || e), { variant: 'error' }); }
+  await refreshSync();
+}
+
+async function onTobyFile(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  let parsed;
+  try { parsed = JSON.parse(await file.text()); }
+  catch { toast('That file isn’t valid JSON', { variant: 'error' }); return; }
+  try {
+    const tree = tobyToBackup(parsed);
+    const report = await store.importJSON(tree, { mode: 'merge' });
+    toast(`Imported ${report.addedCollections} list(s), ${report.addedItems} link(s) from Toby`, { variant: 'success' });
+    await refreshUsage();
+  } catch (err) { toast('Toby import failed: ' + (err.message || err), { variant: 'error' }); }
+}
+
+async function doImportBookmarks() {
+  let granted = false;
+  try { granted = await chrome.permissions.request({ permissions: ['bookmarks'] }); }
+  catch (e) { toast('Could not request permission: ' + (e.message || e), { variant: 'error' }); return; }
+  if (!granted) { toast('Bookmarks permission denied'); return; }
+  try {
+    const tree = await chrome.bookmarks.getTree();
+    const backup = bookmarksToBackup(tree);
+    const report = await store.importJSON(backup, { mode: 'merge' });
+    toast(`Imported ${report.addedCollections} folder(s), ${report.addedItems} bookmark(s)`, { variant: 'success' });
+    await refreshUsage();
+  } catch (err) { toast('Bookmark import failed: ' + (err.message || err), { variant: 'error' }); }
 }
 
 async function doConnect() {

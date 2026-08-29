@@ -128,3 +128,49 @@ export async function updateFile(token, fileId, contentString) {
     { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: contentString }, token);
   return res.json();
 }
+
+/* ------------------------- folders (backups) ------------------------- */
+
+const FOLDER_MIME = 'application/vnd.google-apps.folder';
+
+/** Find (or create) a folder by name at Drive root. Returns its id. */
+export async function findOrCreateFolder(token, name) {
+  const u = new URL('https://www.googleapis.com/drive/v3/files');
+  u.searchParams.set('q', `name='${name}' and mimeType='${FOLDER_MIME}' and trashed=false`);
+  u.searchParams.set('fields', 'files(id,name)');
+  const res = await driveFetch(u.toString(), {}, token);
+  const existing = (await res.json()).files || [];
+  if (existing[0]) return existing[0].id;
+  const created = await driveFetch(
+    'https://www.googleapis.com/drive/v3/files?fields=id',
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, mimeType: FOLDER_MIME }) }, token);
+  return (await created.json()).id;
+}
+
+/** Create a JSON file inside a folder. Returns {id, name}. */
+export async function createInFolder(token, name, contentString, parentId) {
+  const boundary = '----localtoby' + Math.random().toString(36).slice(2);
+  const metadata = { name, mimeType: 'application/json', parents: [parentId] };
+  const body =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\nContent-Type: application/json\r\n\r\n${contentString}\r\n--${boundary}--`;
+  const res = await driveFetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+    { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body }, token);
+  return res.json();
+}
+
+/** List files in a folder, newest first. Returns [{id,name,createdTime}]. */
+export async function listInFolder(token, parentId) {
+  const u = new URL('https://www.googleapis.com/drive/v3/files');
+  u.searchParams.set('q', `'${parentId}' in parents and trashed=false`);
+  u.searchParams.set('fields', 'files(id,name,createdTime)');
+  u.searchParams.set('orderBy', 'createdTime desc');
+  u.searchParams.set('pageSize', '100');
+  const res = await driveFetch(u.toString(), {}, token);
+  return (await res.json()).files || [];
+}
+
+export async function deleteFile(token, fileId) {
+  await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, { method: 'DELETE' }, token);
+}

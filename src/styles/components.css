@@ -64,7 +64,16 @@
 }
 .add-space-row:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 
-.sidebar-footer { margin-top: auto; padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--divider); display: flex; gap: var(--sp-1); }
+.sidebar-footer { margin-top: auto; padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--divider); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-1); }
+.sync-pill {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--sp-2);
+  border-radius: var(--r-pill); font-size: var(--fs-xs); color: var(--text-3);
+  background: var(--surface-2); max-width: 150px; min-width: 0;
+}
+.sync-pill:hover { background: var(--surface-3); color: var(--text-2); }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); flex: none; }
+.sync-pill.is-on { color: var(--success); }
+.sync-pill.is-on .sync-dot { background: var(--success); }
 
 /* ------------------------------------------------------------------ */
 /* Collections + cards                                                 */

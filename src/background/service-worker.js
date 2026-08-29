@@ -11,9 +11,15 @@ import { handleCommand } from './commands.js';
 import { setupContextMenus, handleContextMenuClick } from './context-menus.js';
 import * as store from '../lib/store.js';
 import * as sync from '../lib/sync.js';
-import { SYNC_ALARM, SYNC_PERIOD_MIN, PUSH_DEBOUNCE_MS } from '../lib/sync-config.js';
+import { runBackup } from '../lib/backup.js';
+import { SYNC_ALARM, SYNC_PERIOD_MIN, PUSH_DEBOUNCE_MS, BACKUP_ALARM, BACKUP_PERIOD_MIN } from '../lib/sync-config.js';
 import { debounce } from '../lib/debounce.js';
 import { log } from '../lib/logger.js';
+
+function ensureAlarms() {
+  chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MIN });
+  chrome.alarms.create(BACKUP_ALARM, { periodInMinutes: BACKUP_PERIOD_MIN });
+}
 
 // ---- lifecycle ---------------------------------------------------------
 chrome.runtime.onInstalled.addListener((details) => {
@@ -21,7 +27,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     try {
       await store.init({ withGettingStarted: details.reason === 'install' });
       await setupContextMenus();
-      chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MIN });
+      ensureAlarms();
       sync.autoSync().catch(() => {});
       if (details.reason === 'install') await openDashboard();
     } catch (e) { log.error('onInstalled failed', e); }
@@ -32,7 +38,7 @@ chrome.runtime.onStartup.addListener(() => {
   (async () => {
     try {
       await store.init(); await setupContextMenus();
-      chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MIN });
+      ensureAlarms();
       sync.autoSync().catch(() => {});
     } catch (e) { log.error('onStartup failed', e); }
   })();
@@ -41,6 +47,7 @@ chrome.runtime.onStartup.addListener(() => {
 // ---- periodic background sync -------------------------------------------
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === SYNC_ALARM) sync.autoSync().catch((e) => log.warn('sync alarm', e));
+  else if (alarm.name === BACKUP_ALARM) runBackup().catch((e) => log.warn('backup alarm', e));
 });
 
 // ---- push local changes up (debounced) ---------------------------------

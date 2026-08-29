@@ -35,7 +35,10 @@ depend on.
 - **Optional Google Drive sync** across devices — into *your own* Drive (a single
   `local-toby-library.json`, scope `drive.file`), with tombstone-based deletion
   propagation and last-write-wins merge. Opt-in; nothing touches the network
-  until you connect.
+  until you connect. A sidebar pill shows sync status.
+- **Automatic timestamped Drive backups** (a `Local Toby Backups` folder, last 10
+  kept) and **one-click import** from a **Toby export** or your **browser
+  bookmarks** (Settings). Bookmarks import asks for the permission only when used.
 - **Light / dark / system** theme.
 - Strict, **network-free** security model (see below).
 

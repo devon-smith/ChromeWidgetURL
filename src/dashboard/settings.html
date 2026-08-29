@@ -63,10 +63,22 @@
         <button class="btn btn-primary" id="export">Export JSON backup</button>
         <button class="btn" id="import-merge">Import (merge)</button>
         <button class="btn" id="import-replace">Import (replace)</button>
+        <button class="btn" id="backup-now" hidden>Back up to Drive now</button>
         <input type="file" id="import-file" accept="application/json,.json" hidden>
       </div>
       <p class="usage" id="usage">Storage: …</p>
       <p class="usage" id="last-export"></p>
+      <p class="usage" id="last-backup"></p>
+    </div>
+
+    <div class="card-sec">
+      <h2>Import from elsewhere</h2>
+      <div class="data-actions">
+        <button class="btn" id="import-toby">Import a Toby export…</button>
+        <button class="btn" id="import-bookmarks">Import browser bookmarks</button>
+        <input type="file" id="toby-file" accept="application/json,.json" hidden>
+      </div>
+      <p class="usage">Toby import: use Toby's own JSON export. Bookmarks import will ask for the bookmarks permission the first time.</p>
     </div>
 
     <div class="card-sec">
