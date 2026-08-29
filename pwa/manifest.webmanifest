@@ -1,0 +1,14 @@
+{
+  "name": "Local Toby",
+  "short_name": "Local Toby",
+  "description": "Your Drive-synced link library on mobile.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#161418",
+  "theme_color": "#EB5757",
+  "icons": [
+    { "src": "../icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-48.png", "sizes": "48x48", "type": "image/png" }
+  ]
+}

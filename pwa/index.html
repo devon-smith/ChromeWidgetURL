@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Local Toby</title>
+  <meta name="theme-color" content="#EB5757">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Local Toby">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icons/icon-128.png">
+  <link rel="icon" href="../icons/icon-32.png">
+  <link rel="stylesheet" href="../src/styles/tokens.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+  <header class="topbar">
+    <img class="logo" src="../icons/icon-32.png" alt="">
+    <span class="brand">Local Toby</span>
+    <button class="icon-btn" id="signout" title="Sign out" aria-label="Sign out">⎋</button>
+  </header>
+
+  <p class="status" id="status" hidden></p>
+
+  <section id="auth" hidden>
+    <div class="auth-card">
+      <h1>Your links, on your phone</h1>
+      <p>Sign in with the same Google account your desktop extension syncs to. Read &amp; open your saved links; add new ones from the Share Sheet.</p>
+      <button class="primary" id="signin">Sign in with Google</button>
+    </div>
+  </section>
+
+  <main id="app" hidden>
+    <div class="searchbar"><input id="search" type="search" placeholder="Search your links…" autocomplete="off"></div>
+    <section id="add-panel" class="add-panel" hidden></section>
+    <div id="library" class="library"></div>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

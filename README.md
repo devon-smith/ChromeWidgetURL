@@ -39,6 +39,9 @@ depend on.
 - **Automatic timestamped Drive backups** (a `Local Toby Backups` folder, last 10
   kept) and **one-click import** from a **Toby export** or your **browser
   bookmarks** (Settings). Bookmarks import asks for the permission only when used.
+- **iPhone companion PWA** (`pwa/`) — a mobile web app that reads the same
+  Drive-synced library to search/open your links, and add new ones via the iOS
+  Share Sheet. Setup in [`pwa/README.md`](pwa/README.md).
 - **Light / dark / system** theme.
 - Strict, **network-free** security model (see below).
 
