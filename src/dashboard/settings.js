@@ -12,7 +12,7 @@ import { confirmDialog } from './components/modal.js';
 const $ = (id) => document.getElementById(id);
 const SELECTS = ['theme', 'defaultView', 'defaultOpenBehavior', 'newItemPosition'];
 const NUMBERS = ['largeOpenThreshold'];
-const SWITCHES = ['dedupeOnSave', 'dndEnabled', 'confirmOnDelete', 'closeUnsavedWarning'];
+const SWITCHES = ['dedupeOnSave', 'dndEnabled', 'confirmOnDelete', 'closeUnsavedWarning', 'currentTabsBarVisible'];
 
 async function boot() {
   await store.init();

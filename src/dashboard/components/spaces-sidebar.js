@@ -132,6 +132,7 @@ function spaceMenu(anchor, s, app) {
     } },
     { label: s.isFavorite ? 'Remove from favorites' : 'Add to favorites', icon: 'star', onClick: () => store.updateSpace(s.id, { isFavorite: !s.isFavorite }) },
     { label: 'New collection here…', icon: 'plus', onClick: () => app.addCollection(s.id) },
+    { label: 'Open all as windows', icon: 'window', onClick: () => app.restoreSessionSpace(s.id) },
     { separator: true },
     { label: 'Delete space', icon: 'trash', danger: true, onClick: () => deleteSpace(s, app) },
   ]);

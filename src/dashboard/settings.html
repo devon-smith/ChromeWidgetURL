@@ -44,6 +44,7 @@
       <div class="setting"><span class="label">Enable drag &amp; drop</span><label class="switch"><input type="checkbox" id="dndEnabled"><span class="track"></span><span class="thumb"></span></label></div>
       <div class="setting"><span class="label">Confirm before deleting</span><label class="switch"><input type="checkbox" id="confirmOnDelete"><span class="track"></span><span class="thumb"></span></label></div>
       <div class="setting"><span class="label">Warn when closing an unsaved tab</span><label class="switch"><input type="checkbox" id="closeUnsavedWarning"><span class="track"></span><span class="thumb"></span></label></div>
+      <div class="setting"><span class="label">Show the current-window tabs bar <small>The strip of your open tabs at the top of the dashboard</small></span><label class="switch"><input type="checkbox" id="currentTabsBarVisible"><span class="track"></span><span class="thumb"></span></label></div>
     </div>
 
     <div class="card-sec">
@@ -83,7 +84,7 @@
 
     <div class="card-sec">
       <h2>New tab page</h2>
-      <p class="usage">Local Toby does <b>not</b> take over your new tab page by default. To make it your new tab, install the tiny optional companion in <code>companion-newtab/</code> (see the README) — you can toggle it on/off any time from <code>chrome://extensions</code>.</p>
+      <p class="usage">Local Toby <b>is</b> your new tab page — every new tab opens this dashboard, like the old Toby. The current-window tabs bar (toggle above) lets you drop what you have open into a collection in one click. To turn the takeover off, remove the <code>chrome_url_overrides</code> block from <code>manifest.json</code> and reload the extension; the dashboard still opens with <b>Ctrl/Cmd+Shift+O</b>.</p>
     </div>
 
     <div class="card-sec danger-zone">

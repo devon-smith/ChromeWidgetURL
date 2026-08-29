@@ -139,6 +139,7 @@ export function mountOpenTabs(container, app) {
   container.replaceChildren(el('div', { class: 'panel-header' }, [
     el('span', { class: 'panel-title', text: 'Open Tabs' }),
     el('div', { class: 'panel-actions' }, [
+      el('button', { class: 'btn btn-ghost panel-session-btn', text: 'Save session', title: 'Save every open window as a session', on: { click: () => app.saveSession() } }),
       iconBtn('chevron', { title: 'Hide panel', size: 15, onClick: () => app.toggleTabsPanel() }),
     ]),
   ]));

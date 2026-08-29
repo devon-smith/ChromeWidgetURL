@@ -25,9 +25,11 @@ function buildItems(app) {
   const A = (label, hint, iconName, run) => items.push({ kind: 'action', label, hint, icon: iconName, run });
   A('Save current tab', 'action', 'save', () => app.quickSaveCurrentTab());
   A('Save all tabs in this window', 'action', 'save', () => app.saveAllTabs());
+  A('Save all windows as a session', 'action', 'window', () => app.saveSession());
   A('New collection', 'action', 'plus', () => app.addCollection());
   A('New space', 'action', 'plus', () => app.addSpace());
   A('Toggle Open Tabs panel', 'action', 'window', () => app.toggleTabsPanel());
+  A('Toggle current-tabs bar', 'action', 'window', () => app.toggleCurrentTabsBar());
   A('Cycle theme (System / Light / Dark)', 'action', 'gear', () => cycleTheme(app));
   A('Open settings', 'action', 'gear', () => app.openSettings());
 

@@ -31,6 +31,11 @@ depend on.
   tags on any card and **filter** by them (AND/OR).
 - **Bulk multi-select** in the Open Tabs panel and in collections (save / move /
   tag / close many at once) and **auto-suggested** save targets by domain.
+- **Command palette** (`Ctrl/Cmd+K`) — fuzzy-jump to any link, collection, space,
+  or action from the keyboard.
+- **Sessions** — snapshot *every* open window in one shot (one collection per
+  window) and later reopen the whole set as windows. "Save session" lives in the
+  Open Tabs panel header and the command palette.
 - **Export / import** the whole library as one JSON file.
 - **Optional Google Drive sync** across devices — into *your own* Drive (a single
   `local-toby-library.json`, scope `drive.file`), with tombstone-based deletion
@@ -66,20 +71,23 @@ require a reload).
 | `Ctrl/Cmd + Shift + S` | Save the current tab |
 | *(unbound)* | Save all tabs in the window — assign at `chrome://extensions/shortcuts` |
 
-In the dashboard: `/` focus search · `n` new collection · `t` toggle Open Tabs
-panel · `[` / `]` toggle sidebar · `Esc` clear search.
+In the dashboard: `Ctrl/Cmd+K` command palette · `/` focus search · `n` new
+collection · `t` toggle Open Tabs panel · `[` / `]` toggle sidebar · `Esc` clear
+search.
 
-## Use Local Toby as your new tab page (optional)
+## New tab page
 
-The main extension **never** takes over your new tab page. If you want that
-Toby-like experience, load the tiny companion in `companion-newtab/` as a second
-unpacked extension:
+Like the old Toby, **every new tab opens the dashboard** — the extension
+registers itself as your new-tab page (`chrome_url_overrides.newtab`). The Open
+Tabs panel on the right mirrors the tabs in your current window, so you can drop
+any of them into a collection in one click without leaving the page. The address
+bar keeps focus on a fresh tab (the dashboard never steals it), so you can still
+just start typing a URL.
 
-1. `chrome://extensions` → **Load unpacked** → select `companion-newtab/`.
-2. Open a new tab. Paste your **Local Toby** extension ID (shown on its card at
-   `chrome://extensions`) once, and save.
-3. Every new tab now opens your dashboard. Toggle it on/off any time by
-   enabling/disabling the companion — your data is untouched either way.
+Don't want the takeover? Remove the `"chrome_url_overrides"` block from
+`manifest.json` and reload the extension — everything else keeps working, and you
+still open the dashboard with **Ctrl/Cmd+Shift+O**. (The old opt-in
+`companion-newtab/` helper extension is no longer needed and can be removed.)
 
 ## Backups
 

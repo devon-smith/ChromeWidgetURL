@@ -12,6 +12,7 @@ import { renderSidebar } from './components/spaces-sidebar.js';
 import { renderToolbar } from './components/toolbar.js';
 import { renderCollections } from './components/collections-view.js';
 import { mountOpenTabs } from './components/open-tabs-panel.js';
+import { mountCurrentTabsBar } from './components/current-tabs-bar.js';
 import { toast } from './components/toast.js';
 import { confirmDialog, promptDialog, openModal } from './components/modal.js';
 import { initDnd } from './components/dnd.js';
@@ -24,6 +25,7 @@ const els = {
   shell: document.getElementById('app-shell'),
   sidebar: document.getElementById('region-sidebar'),
   toolbar: document.getElementById('toolbar-root'),
+  currentTabs: document.getElementById('current-tabs-root'),
   center: document.getElementById('center-scroll'),
   tabs: document.getElementById('region-tabs'),
 };
@@ -42,6 +44,7 @@ const app = {
 };
 
 let openTabsCtl = null;
+let currentTabsCtl = null;
 
 /* ----------------------------- lifecycle ------------------------------ */
 async function boot() {
@@ -49,11 +52,12 @@ async function boot() {
   await loadState();
   initDnd(app);
   openTabsCtl = mountOpenTabs(els.tabs, app);
+  currentTabsCtl = mountCurrentTabsBar(els.currentTabs, app);
   render();
   wireKeyboard();
   wireResponsiveToggles();
 
-  const scheduleSync = rafCoalesce(async () => { await loadState(); render(); openTabsCtl?.refresh(); });
+  const scheduleSync = rafCoalesce(async () => { await loadState(); render(); openTabsCtl?.refresh(); currentTabsCtl?.refresh(); });
   // Skip re-render on non-structural writes (e.g. touchItemOpened bumps no rev),
   // so opening a link doesn't rebuild the whole dashboard.
   store.subscribe(({ changes }) => {
@@ -215,6 +219,42 @@ app.saveWindow = async (windowId) => {
   toast(`Saved ${created.length} tab${created.length === 1 ? '' : 's'} to new collection`, { variant: 'success' });
 };
 
+// A "session" = a snapshot of every open window, stored as a space with one
+// collection per window. Restore opens each collection in its own new window.
+app.saveSession = async () => {
+  const def = `Session ${defaultName().replace('Tabs ', '')}`;
+  const name = await promptDialog({ title: 'Save session', label: 'Session name', value: def, confirmLabel: 'Save' });
+  if (!name) return;
+  const space = await store.createSpace({ name, icon: '🕘' });
+  const wins = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+  let total = 0, savedWindows = 0;
+  for (let i = 0; i < wins.length; i++) {
+    const winTabs = (wins[i].tabs || []).slice().sort((a, b) => a.index - b.index);
+    const openable = winTabs.filter((t) => safeHref(t.url));
+    if (!openable.length) continue;
+    savedWindows++;
+    const col = await store.createCollection(space.id, { name: `Window ${savedWindows} · ${openable.length} tabs` });
+    const created = await store.addItemsFromTabs(col.id, winTabs);
+    total += created.length;
+  }
+  await store.setActiveSpace(space.id);
+  toast(`Saved session “${name}” · ${total} tab${total === 1 ? '' : 's'} across ${savedWindows} window${savedWindows === 1 ? '' : 's'}`, { variant: 'success' });
+};
+
+app.restoreSessionSpace = async (spaceId) => {
+  const space = app.state.spaces.find((s) => s.id === spaceId);
+  if (!space || !space.collections.length) { toast('No collections to open', { variant: 'error' }); return; }
+  const total = space.collections.reduce((n, c) => n + c.items.filter((i) => safeHref(i.url)).length, 0);
+  if (!total) { toast('Nothing openable here', { variant: 'error' }); return; }
+  if (total > (app.settings.largeOpenThreshold || 15)) {
+    const ok = await confirmDialog({ title: 'Open as windows?', message: `This opens ${total} tabs across ${space.collections.length} window(s).`, confirmLabel: `Open ${total}` });
+    if (!ok) return;
+  }
+  let opened = 0;
+  for (const c of space.collections) { try { const r = await tabsLib.restoreCollection(c.id, 'newWindow'); opened += r.openedCount; } catch (e) { toast(String(e.message || e), { variant: 'error' }); } }
+  toast(`Opened ${opened} tab${opened === 1 ? '' : 's'} in ${space.collections.length} window(s)`);
+};
+
 app.saveWindowAndClose = async (windowId) => {
   const winTabs = (await chrome.tabs.query({ windowId })).sort((a, b) => a.index - b.index);
   const closable = winTabs.filter((t) => safeHref(t.url));
@@ -289,6 +329,7 @@ app.setAllCollapsed = async (collapsed) => {
 
 app.toggleSidebar = () => store.updateSettings({ sidebarCollapsed: !app.settings.sidebarCollapsed });
 app.toggleTabsPanel = () => store.updateSettings({ openTabsPanelVisible: app.settings.openTabsPanelVisible === false });
+app.toggleCurrentTabsBar = () => store.updateSettings({ currentTabsBarVisible: app.settings.currentTabsBarVisible === false });
 app.openSettings = () => chrome.tabs.create({ url: chrome.runtime.getURL('src/dashboard/settings.html') });
 
 app.quickSaveCurrentTab = async () => {

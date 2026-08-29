@@ -45,6 +45,9 @@
   "side_panel": {
     "default_path": "src/sidepanel/sidepanel.html"
   },
+  "chrome_url_overrides": {
+    "newtab": "src/dashboard/dashboard.html"
+  },
   "commands": {
     "open-dashboard": {
       "suggested_key": { "default": "Ctrl+Shift+O", "mac": "Command+Shift+O" },

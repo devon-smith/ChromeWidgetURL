@@ -60,6 +60,8 @@ export function defaultSettings() {
     defaultOpenBehavior: 'newWindow',
     newItemPosition: 'top',
     openTabsPanelVisible: true,
+    currentTabsBarVisible: true,
+    currentTabsBarCollapsed: false,
     dndEnabled: true,
     confirmOnDelete: true,
     closeUnsavedWarning: true,
